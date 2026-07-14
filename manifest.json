@@ -32,7 +32,7 @@
 
   "browser_specific_settings": {
     "gecko": {
-      "id": "ytblocker@nigon",
+      "id": "ytblocker@omanjusan",
       "data_collection_permissions": {
         "required": ["none"],
         "optional": []
