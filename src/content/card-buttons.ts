@@ -1,4 +1,5 @@
 import { blockAndLog, CARD_SELECTOR, getChannelName, getVideoTitle } from './blocker';
+import { DEBUG, debugLog } from '../shared/debug';
 
 type OnAdded = () => void;
 
@@ -65,7 +66,21 @@ export function injectCardButtons(card: Element, onAdded: OnAdded): void {
 }
 
 export function injectAllCardButtons(onAdded: OnAdded): void {
-  document.querySelectorAll<Element>(CARD_SELECTOR).forEach((card) => {
+  const cards = document.querySelectorAll<Element>(CARD_SELECTOR);
+  debugLog('injectAll: cards found =', cards.length);
+  cards.forEach((card) => {
+    if (DEBUG) {
+      const title   = getVideoTitle(card);
+      const channel = getChannelName(card);
+      const lockup  = card.querySelector('yt-lockup-view-model');
+      debugLog('card', card.tagName,
+        '| title:', title || '(empty)',
+        '| ch:', channel || '(empty)',
+        '| lockup:', !!lockup,
+        '| lockup.shadowRoot:', lockup ? !!lockup.shadowRoot : 'n/a',
+        '| watch link:', !!card.querySelector('a[href*="/watch"]'),
+      );
+    }
     injectCardButtons(card, onAdded);
   });
 }

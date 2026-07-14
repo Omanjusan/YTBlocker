@@ -1,4 +1,5 @@
 import { blockAndLog, CARD_SELECTOR, getChannelName, getVideoTitle } from './blocker';
+import { debugLog } from '../shared/debug';
 
 type OnAdded = () => void;
 
@@ -88,6 +89,8 @@ function findMenuListbox(): Element | null {
 }
 
 export function setupMenuInjector(onAdded: OnAdded): void {
+  debugLog('setupMenuInjector: registered');
+
   document.addEventListener(
     'click',
     (e) => {
@@ -105,20 +108,25 @@ export function setupMenuInjector(onAdded: OnAdded): void {
       ) as HTMLButtonElement | undefined;
       if (!button) { reset(); return; }
 
+      debugLog('button in card clicked, card:', card.tagName, 'aria-label:', button.getAttribute('aria-label') ?? '');
+
       reset();
       pendingCard = card;
 
       menuObserver = new MutationObserver(() => {
         if (!pendingCard) return;
         const listbox = findMenuListbox();
+        debugLog('menuObserver fired, listbox:', listbox?.tagName ?? 'null');
         if (!listbox) return;
         injectItems(pendingCard, listbox, onAdded);
         reset();
       });
 
       menuObserver.observe(document.body, { childList: true, subtree: true });
+      debugLog('menuObserver: observing for card', card.tagName);
 
       cleanupTimer = setTimeout(() => {
+        debugLog('cleanupTimer: 2s elapsed, resetting (listbox not found)');
         reset();
       }, 2000);
     },
