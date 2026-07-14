@@ -92,18 +92,6 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
       })
     );
   }
-
-  // POC調査用: 注入した項目がYouTube側の再レンダリングでいつ消されるかを追跡する
-  for (const ms of [0, 100, 500, 1000]) {
-    setTimeout(() => {
-      debugLog(
-        `survival check +${ms}ms:`,
-        'items in listbox =', listbox.querySelectorAll('.ytblocker-item').length,
-        '| items in document =', document.querySelectorAll('.ytblocker-item').length,
-        '| listbox still in DOM =', document.contains(listbox),
-      );
-    }, ms);
-  }
 }
 
 /** YouTube側が開いた三点メニューの listbox 要素を探す。DOM構造の版差に応じて複数セレクタを試す。 */

@@ -1,12 +1,8 @@
 import { addLogs, DEFAULT_DEBOUNCE_DELAY, getBlockShortsEnabled, getDebounceDelay, getEntries, STORAGE_KEYS } from '../shared/storage';
 import { applyBlockList, CARD_SELECTOR } from './blocker';
-import { injectAllCardButtons } from './card-buttons';
 import { setupMenuInjector } from './menu-injector';
-import { DEBUG } from '../shared/debug';
 
 import type { BlockEntry } from '../shared/types';
-
-console.error('YTBLOCKER CONTENT SCRIPT LOADED'); // POC切り分け用、後で削除
 
 let blockEntries: BlockEntry[] = [];
 let blockShorts = false;
@@ -18,24 +14,18 @@ function applyAndLog(): void {
   if (logs.length > 0) addLogs(logs).catch(() => {});
 }
 
-/** カードへのブロックボタン注入をやり直す。ボタン押下時は refresh() 経由で再適用する。 */
-function injectButtons(): void {
-  injectAllCardButtons(async () => { await refresh(); });
-}
-
-/** storage からルール/設定を読み直し、ブロック適用とボタン注入をやり直す。 */
+/** storage からルール/設定を読み直し、ブロック適用をやり直す。 */
 async function refresh(): Promise<void> {
   [blockEntries, blockShorts] = await Promise.all([getEntries(), getBlockShortsEnabled()]);
   applyAndLog();
-  injectButtons();
 }
 
 (async () => {
   debounceDelay = await getDebounceDelay();
   await refresh();
 
-  // POC: 三点メニュー経由のブロックをDEBUG時のみ試験結線(card-buttonsの本流には影響しない)
-  if (DEBUG) setupMenuInjector(async () => { await refresh(); });
+  // 三点メニュー経由のブロック。document全体のclickリスナー1本なので初回登録のみでよい
+  setupMenuInjector(async () => { await refresh(); });
 
   browser.storage.onChanged.addListener(async (changes, area) => {
     if (area !== 'local') return;
@@ -64,13 +54,11 @@ async function refresh(): Promise<void> {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       applyAndLog();
-      injectButtons();
     }, debounceDelay);
   });
   domObserver.observe(document.body, { childList: true, subtree: true });
 
   document.addEventListener('yt-navigate-finish', () => {
     applyAndLog();
-    injectButtons();
   });
 })();
