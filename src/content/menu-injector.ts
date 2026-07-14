@@ -1,4 +1,4 @@
-import { blockAndLog, CARD_SELECTOR, getChannelName, getVideoTitle } from './blocker';
+import { blockAndLog, CARD_SELECTOR, getChannelName, getVideoTitle, isInsideAdContainer } from './blocker';
 import { debugLog } from '../shared/debug';
 
 type OnAdded = () => void;
@@ -137,6 +137,7 @@ export function setupMenuInjector(onAdded: OnAdded): void {
         (el): el is Element => el instanceof Element && typeof el.matches === 'function' && el.matches(CARD_SELECTOR)
       );
       if (!card) { debugLog('click: card not found in composedPath'); reset(); return; }
+      if (isInsideAdContainer(card)) { debugLog('click: card is inside ad container, skip'); reset(); return; }
 
       // BUTTON要素を探す（三点メニューボタン）
       const button = path.find(

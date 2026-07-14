@@ -15,6 +15,26 @@ export const CARD_SELECTOR = [
 ].join(', ');
 
 /**
+ * 広告枠のコンテナ要素。yt-lockup-view-model 等の通常カードと同じタグが
+ * 広告枠内でも使われるため、これらの子孫にあるカードは処理対象から除外する。
+ * 広告DOMを削除するとYouTube側の広告完了判定が壊れ、無限リロードを
+ * 引き起こすことが実機検証で確認された。
+ */
+const AD_CONTAINER_SELECTOR = [
+  'ytd-ad-slot-renderer',
+  'ytd-in-feed-ad-layout-renderer',
+  'ytd-promoted-video-renderer',
+  'ytd-display-ad-renderer',
+  'ytd-ad-renderer',
+  'ytd-companion-slot-renderer',
+].join(', ');
+
+/** カードが広告枠の子孫かどうかを判定する。 */
+export function isInsideAdContainer(card: Element): boolean {
+  return !!card.closest(AD_CONTAINER_SELECTOR);
+}
+
+/**
  * Shadow DOM を再帰的に貫通して querySelector する。
  * YouTube の新UI(yt-lockup-view-model 等)はタイトル/チャンネル名が
  * shadow root の中に入っていることがあるため、通常の querySelector だけでは届かない。
@@ -132,6 +152,10 @@ export function applyBlockList(entries: BlockEntry[], blockShorts: boolean): Blo
     // 入れ子になることがある。親の除去で切り離された子を処理するとログが
     // 二重記録されるため、既にDOMから外れたカードはスキップする
     if (!card.isConnected) return;
+
+    // 広告枠内のカードは削除しない(YouTube側の広告完了判定を壊し、
+    // 無限リロードを引き起こすため)
+    if (isInsideAdContainer(card)) return;
 
     if (blockShorts && isShorts(card)) {
       card.remove();

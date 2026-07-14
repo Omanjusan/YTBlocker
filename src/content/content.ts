@@ -1,5 +1,5 @@
 import { addLogs, DEFAULT_DEBOUNCE_DELAY, getBlockShortsEnabled, getDebounceDelay, getEntries, getScoutModeEnabled, STORAGE_KEYS } from '../shared/storage';
-import { applyBlockList, CARD_SELECTOR } from './blocker';
+import { applyBlockList, CARD_SELECTOR, isInsideAdContainer } from './blocker';
 import { scoutScan } from './card-scout';
 import { setupMenuInjector } from './menu-injector';
 
@@ -63,10 +63,16 @@ async function refresh(): Promise<void> {
     // 観測モードは未知カードが対象なので CARD_SELECTOR で絞らず要素追加全般で走らせる
     scheduleScout();
 
-    const hasRelevantChange = addedElements.some(n =>
-      (n as Element).matches?.(CARD_SELECTOR) ||
-      (n as Element).querySelector?.(CARD_SELECTOR)
-    );
+    // 広告枠は uBlock 等と同じDOMを奪い合いやすく、そこだけの変化で毎回
+    // 再スキャンすると衝突頻度が上がる。広告枠以外にカードが増えた時だけ反応する
+    const hasRelevantChange = addedElements.some((n) => {
+      const el = n as Element;
+      const cards = [
+        ...(el.matches?.(CARD_SELECTOR) ? [el] : []),
+        ...(el.querySelectorAll?.(CARD_SELECTOR) ?? []),
+      ];
+      return cards.some((card) => !isInsideAdContainer(card));
+    });
     if (!hasRelevantChange) return;
 
     if (debounceTimer) clearTimeout(debounceTimer);
