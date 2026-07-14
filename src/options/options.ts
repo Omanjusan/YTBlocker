@@ -1,13 +1,12 @@
 import {
-  addEntry, clearLogs, DEFAULT_DEBOUNCE_DELAY, generateId, getBlockShortsEnabled, getDebounceDelay,
-  getEntries, getLogs, getScoutModeEnabled, removeEntry, setBlockShortsEnabled, setDebounceDelay,
+  addEntry, clearLogs, generateId, getBlockShortsEnabled,
+  getEntries, getLogs, getScoutModeEnabled, removeEntry, setBlockShortsEnabled,
   setScoutModeEnabled, STORAGE_KEYS,
 } from '../shared/storage';
 import type { BlockEntry, MatchTarget } from '../shared/types';
 
 const shortsCheckbox  = document.getElementById('shorts-checkbox')  as HTMLInputElement;
 const scoutCheckbox   = document.getElementById('scout-checkbox')   as HTMLInputElement;
-const debounceInput   = document.getElementById('debounce-input')   as HTMLInputElement;
 const sampleInput     = document.getElementById('sample-input')     as HTMLInputElement;
 const regexInput      = document.getElementById('regex-input')      as HTMLInputElement;
 const matchIndicator  = document.getElementById('match-indicator')  as HTMLSpanElement;
@@ -36,20 +35,6 @@ getScoutModeEnabled().then((enabled) => {
 
 scoutCheckbox.addEventListener('change', () => {
   setScoutModeEnabled(scoutCheckbox.checked);
-});
-
-// ---- デバウンス遅延設定 ----
-
-getDebounceDelay().then((ms) => {
-  debounceInput.value = String(ms);
-});
-
-debounceInput.addEventListener('change', () => {
-  let val = parseInt(debounceInput.value, 10);
-  if (isNaN(val)) val = DEFAULT_DEBOUNCE_DELAY;
-  val = Math.max(100, Math.min(1000, val));
-  debounceInput.value = String(val);
-  setDebounceDelay(val);
 });
 
 // ---- リアルタイムマッチ判定 ----

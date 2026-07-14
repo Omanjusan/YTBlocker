@@ -65,35 +65,6 @@
       user-select: none;
     }
 
-    /* デバウンス遅延 */
-    .debounce-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #f0f0f0;
-    }
-    .debounce-row label {
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .debounce-control {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .debounce-control input[type="number"] {
-      width: 72px;
-      padding: 4px 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      text-align: right;
-    }
-    .debounce-control input[type="number"]:focus { outline: none; border-color: #065fd4; }
-    .debounce-unit { font-size: 13px; color: #606060; }
-
     /* フォーム行 */
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
     .field label { font-size: 12px; font-weight: 600; color: #606060; }
@@ -256,13 +227,6 @@
       <div class="shorts-row">
         <input type="checkbox" id="scout-checkbox" />
         <label for="scout-checkbox">観測モード（未対応カードをコンソールに報告。通常はOFF）</label>
-      </div>
-      <div class="debounce-row">
-        <label for="debounce-input">DOM監視デバウンス遅延</label>
-        <div class="debounce-control">
-          <input type="number" id="debounce-input" min="100" max="1000" step="50" />
-          <span class="debounce-unit">ms</span>
-        </div>
       </div>
     </section>
 

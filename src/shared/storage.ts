@@ -5,18 +5,14 @@ export const STORAGE_KEYS = {
   list: 'ytblocker_list',
   log: 'ytblocker_log',
   blockShorts: 'ytblocker_block_shorts',
-  debounceDelay: 'ytblocker_debounce_delay',
   scoutMode: 'ytblocker_scout_mode',
 } as const;
 
 const KEY           = STORAGE_KEYS.list;
 const LOG_KEY        = STORAGE_KEYS.log;
 const SHORTS_KEY     = STORAGE_KEYS.blockShorts;
-const DEBOUNCE_KEY   = STORAGE_KEYS.debounceDelay;
 const SCOUT_KEY      = STORAGE_KEYS.scoutMode;
 const LOG_MAX        = 50;
-
-export const DEFAULT_DEBOUNCE_DELAY = 300;
 
 /** 登録済みのブロックルール一覧を取得する。未登録時は空配列。 */
 export async function getEntries(): Promise<BlockEntry[]> {
@@ -64,16 +60,6 @@ export async function getBlockShortsEnabled(): Promise<boolean> {
 
 export async function setBlockShortsEnabled(enabled: boolean): Promise<void> {
   await browser.storage.local.set({ [SHORTS_KEY]: enabled });
-}
-
-/** DOM監視の再描画をまとめて処理するデバウンス遅延時間(ms)を取得する。 */
-export async function getDebounceDelay(): Promise<number> {
-  const result = await browser.storage.local.get(DEBOUNCE_KEY);
-  return (result[DEBOUNCE_KEY] as number | undefined) ?? DEFAULT_DEBOUNCE_DELAY;
-}
-
-export async function setDebounceDelay(ms: number): Promise<void> {
-  await browser.storage.local.set({ [DEBOUNCE_KEY]: ms });
 }
 
 /** 観測モード(未対応カード検出ログ)が有効かどうかを取得する。 */

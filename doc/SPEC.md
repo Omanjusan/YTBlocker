@@ -72,8 +72,7 @@ options.ts  ──> shared/storage.ts, shared/types.ts
 
 ### 定数
 
-- `STORAGE_KEYS`: `browser.storage.local` で使う各設定項目のキー名。文字列の再入力によるタイポを防ぐため一箇所に集約（`list` / `log` / `blockShorts` / `debounceDelay` / `scoutMode`）
-- `DEFAULT_DEBOUNCE_DELAY = 300`: デバウンス遅延のデフォルト値(ms)
+- `STORAGE_KEYS`: `browser.storage.local` で使う各設定項目のキー名。文字列の再入力によるタイポを防ぐため一箇所に集約（`list` / `log` / `blockShorts` / `scoutMode`）
 - ログは内部で最大50件（`LOG_MAX`）に切り詰め
 
 ### 関数
@@ -88,8 +87,6 @@ options.ts  ──> shared/storage.ts, shared/types.ts
 | `clearLogs` | `() => Promise<void>` | ブロック履歴ログを全件削除 |
 | `getBlockShortsEnabled` | `() => Promise<boolean>` | ショート動画を一括ブロックする設定が有効かどうかを取得 |
 | `setBlockShortsEnabled` | `(enabled: boolean) => Promise<void>` | 上記設定を更新 |
-| `getDebounceDelay` | `() => Promise<number>` | DOM監視の再描画をまとめて処理するデバウンス遅延時間(ms)を取得 |
-| `setDebounceDelay` | `(ms: number) => Promise<void>` | 上記設定を更新 |
 | `getScoutModeEnabled` | `() => Promise<boolean>` | 観測モード（未対応カード検出ログ）が有効かどうかを取得。デフォルトOFF |
 | `setScoutModeEnabled` | `(enabled: boolean) => Promise<void>` | 上記設定を更新 |
 | `generateId` | `() => string` | ブロックルール/ログのID用に衝突しにくい一意な文字列を生成（`${Date.now()}-${random}`形式） |
@@ -179,11 +176,11 @@ content scriptのエントリポイント。監視・再適用ロジックを統
 
 ### 起動時の処理フロー
 
-1. `getDebounceDelay()` でデバウンス値を読み込み、`refresh()` で初回適用
-2. `browser.storage.onChanged` を購読し、デバウンス値変更・ルール/ショート設定変更時に反映
-3. `MutationObserver` でDOM変化を監視し、追加ノードに動画カードが含まれる場合のみ再適用（無関係なDOM変化での無駄な再描画を回避）。連続発火はデバウンスしてまとめて処理
+1. `refresh()` で初回適用
+2. `browser.storage.onChanged` を購読し、ルール/ショート設定変更時に反映
+3. `MutationObserver` でDOM変化を監視し、追加ノードに動画カードが含まれる場合のみ即時再適用（無関係なDOM変化での無駄な再描画を回避）。広告枠（`isInsideAdContainer`）のみの変化では反応しない
 4. `yt-navigate-finish` イベント（YouTube SPA遷移完了）でも即時再適用
-5. 観測モード（`scoutMode`）が有効な場合のみ、要素追加全般を対象に独立したデバウンスで `scoutScan` を実行（ブロック適用側は既知カードの追加でしか発火しないが、観測は未知カードを探すのが目的のため別系統）。起動時・SPA遷移時・設定ON切替時にも走査
+5. 観測モード（`scoutMode`）が有効な場合のみ、要素追加全般を対象に `scoutScan` を即時実行（ブロック適用側は既知カードの追加でしか発火しないが、観測は未知カードを探すのが目的のため別系統）。起動時・SPA遷移時・設定ON切替時にも走査
 
 ---
 
@@ -208,7 +205,6 @@ content scriptのエントリポイント。監視・再適用ロジックを統
 |---|---|---|
 | ショート動画設定 | チェックボックス変更ハンドラ | `getBlockShortsEnabled`/`setBlockShortsEnabled` と同期 |
 | 観測モード設定 | チェックボックス変更ハンドラ | `getScoutModeEnabled`/`setScoutModeEnabled` と同期。通常はOFF |
-| デバウンス遅延設定 | 入力欄変更ハンドラ | 入力値を100〜1000msにクランプして`setDebounceDelay`保存 |
 | リアルタイムマッチ判定 | `updateMatchIndicator()` | サンプル入力欄がパターン欄の正規表現にマッチするかをリアルタイムで判定し、⭕/❌で表示 |
 | 登録 | `handleAdd(target: MatchTarget)` | 正規表現入力欄の内容を`matchType: 'regex'`のブロックルールとして登録 |
 | ルールリスト描画 | `renderList()`, `targetLabel()`, `targetBadgeClass()` | 登録済みブロックルール一覧を新しい順に描画。行ごとに対象/方式バッジ・削除ボタン付き |
