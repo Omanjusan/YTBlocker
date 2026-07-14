@@ -11,6 +11,7 @@ export const CARD_SELECTOR = [
   'ytd-reel-item-renderer',
   'ytd-shorts-lockup-view-model',     // 旧バージョン
   'ytm-shorts-lockup-view-model-v2',  // 検索結果ページ用 ← これが抜けてた
+  'yt-lockup-view-model',             // 新UI汎用カード(watchページ関連動画など)
 ].join(', ');
 
 /**
@@ -62,6 +63,12 @@ export function getChannelName(card: Element): string {
     'a[href*="/@"]',               // 新構造: @ハンドル形式
     'a[href*="/channel/"]',
     'a[href*="/c/"]',
+    // yt-lockup-view-model: チャンネル名がリンクではなくプレーンテキストで
+    // メタデータ行(1行目)に入っている。クラス命名はYouTubeの版によって
+    // wiz形式(kebab-case)とcamelCase形式の両方が存在する
+    '.yt-content-metadata-view-model-wiz__metadata-text',
+    '.ytContentMetadataViewModelMetadataText',
+    'yt-content-metadata-view-model span[role="text"]',
   ];
   for (const sel of candidates) {
     const text = deepQuery(card, sel)?.textContent?.trim();
@@ -121,6 +128,11 @@ export function applyBlockList(entries: BlockEntry[], blockShorts: boolean): Blo
   const logged: BlockLog[] = [];
 
   document.querySelectorAll(CARD_SELECTOR).forEach((card) => {
+    // ytd-rich-item-renderer の中に yt-lockup-view-model が入る等、カード同士が
+    // 入れ子になることがある。親の除去で切り離された子を処理するとログが
+    // 二重記録されるため、既にDOMから外れたカードはスキップする
+    if (!card.isConnected) return;
+
     if (blockShorts && isShorts(card)) {
       card.remove();
       return;

@@ -97,13 +97,16 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
 /** YouTube側が開いた三点メニューの listbox 要素を探す。DOM構造の版差に応じて複数セレクタを試す。 */
 function findMenuListbox(): Element | null {
   const candidates: [string, string][] = [
+    ['yt-list-view-model[role="menu"]', 'D'],  // 新UI(yt-lockup-view-model系カードのシート型メニュー)
     ['ytd-menu-popup-renderer tp-yt-paper-listbox', 'A'],
     ['tp-yt-paper-listbox[role="listbox"]', 'B'],
     ['ytd-menu-popup-renderer', 'C'],
   ];
   for (const [sel, label] of candidates) {
-    const hit = document.querySelector(sel);
-    if (hit) {
+    for (const hit of document.querySelectorAll(sel)) {
+      // 閉じた古いメニューがDOMに残留することがあるため、非表示のdropdown配下は除外
+      const dropdown = hit.closest('tp-yt-iron-dropdown') as HTMLElement | null;
+      if (dropdown && dropdown.style.display === 'none') continue;
       debugLog('findMenuListbox: matched pattern', label, sel);
       return hit;
     }
@@ -144,6 +147,9 @@ export function setupMenuInjector(onAdded: OnAdded): void {
       debugLog('button in card clicked, card:', card.tagName, 'aria-label:', button.getAttribute('aria-label') ?? '');
 
       reset();
+      // 新UIはメニューDOMをカード間で使い回すため、前回注入した項目が
+      // 残っていると古いカードの情報のままになる。必ず除去してから再注入する
+      document.querySelectorAll('.ytblocker-item').forEach((el) => el.remove());
       pendingCard = card;
 
       menuObserver = new MutationObserver(() => {
@@ -154,7 +160,7 @@ export function setupMenuInjector(onAdded: OnAdded): void {
         // 空のlistboxに注入するとYouTube(Polymer)側の項目構築で上書き消去されるため、
         // ネイティブ項目が流し込まれるまで注入を待つ
         const nativeItem = listbox.querySelector(
-          'ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer, tp-yt-paper-item'
+          'ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer, tp-yt-paper-item, yt-list-item-view-model'
         );
         if (!nativeItem) {
           debugLog('menuObserver: listbox found but no native items yet, waiting');

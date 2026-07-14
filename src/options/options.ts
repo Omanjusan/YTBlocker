@@ -1,10 +1,12 @@
 import {
   addEntry, clearLogs, DEFAULT_DEBOUNCE_DELAY, generateId, getBlockShortsEnabled, getDebounceDelay,
-  getEntries, getLogs, removeEntry, setBlockShortsEnabled, setDebounceDelay, STORAGE_KEYS,
+  getEntries, getLogs, getScoutModeEnabled, removeEntry, setBlockShortsEnabled, setDebounceDelay,
+  setScoutModeEnabled, STORAGE_KEYS,
 } from '../shared/storage';
 import type { BlockEntry, MatchTarget } from '../shared/types';
 
 const shortsCheckbox  = document.getElementById('shorts-checkbox')  as HTMLInputElement;
+const scoutCheckbox   = document.getElementById('scout-checkbox')   as HTMLInputElement;
 const debounceInput   = document.getElementById('debounce-input')   as HTMLInputElement;
 const sampleInput     = document.getElementById('sample-input')     as HTMLInputElement;
 const regexInput      = document.getElementById('regex-input')      as HTMLInputElement;
@@ -24,6 +26,16 @@ getBlockShortsEnabled().then((enabled) => {
 
 shortsCheckbox.addEventListener('change', () => {
   setBlockShortsEnabled(shortsCheckbox.checked);
+});
+
+// ---- 観測モード設定 ----
+
+getScoutModeEnabled().then((enabled) => {
+  scoutCheckbox.checked = enabled;
+});
+
+scoutCheckbox.addEventListener('change', () => {
+  setScoutModeEnabled(scoutCheckbox.checked);
 });
 
 // ---- デバウンス遅延設定 ----
