@@ -93,6 +93,29 @@
     }
     .is-editing .edit-tag { display: inline-flex; }
 
+    /* NG登録容量ゲージ */
+    .usage-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #606060;
+      margin-bottom: 14px;
+    }
+    .usage-badge {
+      display: inline-block;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: transparent;
+    }
+    .usage-badge.usage-warn { background: #fff3cd; }
+    .usage-badge.usage-full { background: #f8d7da; }
+    @media (prefers-color-scheme: dark) {
+      .usage-badge.usage-warn { background: #6b5900; }
+      .usage-badge.usage-full { background: #6b1f24; }
+    }
+
     /* ショート動画チェックボックス */
     .shorts-row {
       display: flex;
@@ -310,6 +333,10 @@
   <main>
     <!-- ショート動画設定 -->
     <section class="card">
+      <div class="usage-row">
+        <span>NG登録容量:</span>
+        <span class="usage-badge" id="usage-badge">0%</span>
+      </div>
       <div class="shorts-row">
         <input type="checkbox" id="shorts-checkbox" />
         <label for="shorts-checkbox">ショート動画をすべて非表示にする</label>
@@ -339,6 +366,7 @@
           <input id="regex-input" type="text" />
           <span id="match-indicator">❌</span>
         </div>
+        <p class="field-note" id="byte-budget"></p>
       </div>
 
       <fieldset class="target-group">
