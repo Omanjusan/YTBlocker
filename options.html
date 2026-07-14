@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YTBlocker 設定</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      background: #f9f9f9;
+      color: #0f0f0f;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #ff0000;
+      color: #fff;
+      padding: 14px 24px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 24px auto;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px 24px;
+    }
+
+    .card h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #0f0f0f;
+    }
+
+    /* ショート動画チェックボックス */
+    .shorts-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .shorts-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #c00;
+    }
+    .shorts-row label {
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* デバウンス遅延 */
+    .debounce-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .debounce-row label {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .debounce-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .debounce-control input[type="number"] {
+      width: 72px;
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      text-align: right;
+    }
+    .debounce-control input[type="number"]:focus { outline: none; border-color: #065fd4; }
+    .debounce-unit { font-size: 13px; color: #606060; }
+
+    /* フォーム行 */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 12px; font-weight: 600; color: #606060; }
+    .field input {
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { outline: none; border-color: #065fd4; }
+
+    /* 正規表現行：入力 + 判定アイコン */
+    .regex-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .regex-row input { flex: 1; }
+    #match-indicator {
+      font-size: 20px;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    /* 簡易マニュアル */
+    .manual {
+      background: #f5f5f5;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #404040;
+      margin-bottom: 16px;
+    }
+    .manual code {
+      background: #e8e8e8;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    /* 登録ボタン */
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-video    { background: #065fd4; color: #fff; }
+    .btn-video:hover    { background: #0356c4; }
+    .btn-channel  { background: #107516; color: #fff; }
+    .btn-channel:hover  { background: #0d5f12; }
+    .btn-both     { background: #6a1b9a; color: #fff; }
+    .btn-both:hover     { background: #581691; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* 登録済みリスト */
+    #entry-list { display: flex; flex-direction: column; gap: 8px; }
+    .entry-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background: #fafafa;
+    }
+    .entry-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge-video    { background: #e3efff; color: #065fd4; }
+    .badge-channel  { background: #e6f4e7; color: #107516; }
+    .badge-both     { background: #f3e5f5; color: #6a1b9a; }
+    .badge-regex    { background: #fff3e0; color: #e65100; }
+    .entry-value {
+      flex: 1;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      word-break: break-all;
+      color: #0f0f0f;
+    }
+    .btn-delete {
+      padding: 4px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      color: #c00;
+      flex-shrink: 0;
+    }
+    .btn-delete:hover { background: #fff0f0; border-color: #c00; }
+
+    .empty-msg { font-size: 13px; color: #aaa; text-align: center; padding: 12px 0; }
+
+    /* ブロックログ */
+    .log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .log-header h2 { margin-bottom: 0; }
+    .btn-clear-log {
+      padding: 4px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      color: #606060;
+    }
+    .btn-clear-log:hover { background: #f5f5f5; }
+
+    #log-list { display: flex; flex-direction: column; gap: 6px; }
+    .log-item {
+      display: flex;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background: #fafafa;
+      font-size: 12px;
+      align-items: baseline;
+    }
+    .log-time {
+      color: #888;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+    .log-body {
+      color: #333;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <header>YTBlocker 設定</header>
+
+  <main>
+    <!-- ショート動画設定 -->
+    <section class="card">
+      <div class="shorts-row">
+        <input type="checkbox" id="shorts-checkbox" />
+        <label for="shorts-checkbox">ショート動画をすべて非表示にする</label>
+      </div>
+      <div class="debounce-row">
+        <label for="debounce-input">DOM監視デバウンス遅延</label>
+        <div class="debounce-control">
+          <input type="number" id="debounce-input" min="100" max="1000" step="50" />
+          <span class="debounce-unit">ms</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 正規表現ルール追加カード -->
+    <section class="card">
+      <h2>ブロックルールを追加（正規表現）</h2>
+
+      <div class="field">
+        <label for="sample-input">サンプル文字列（動画タイトルまたはチャンネル名）</label>
+        <input id="sample-input" type="text" placeholder="例: ゲーム実況【ヒカキン】" />
+      </div>
+
+      <div class="field">
+        <label for="regex-input">正規表現パターン</label>
+        <div class="regex-row">
+          <input id="regex-input" type="text" placeholder="例: ヒカキン|はじめしゃちょー" />
+          <span id="match-indicator">❌</span>
+        </div>
+      </div>
+
+      <div class="manual">
+        <code>^</code> 先頭 &nbsp;
+        <code>$</code> 末尾 &nbsp;
+        <code>.</code> 任意の1文字 &nbsp;
+        <code>*</code> 0回以上 &nbsp;
+        <code>+</code> 1回以上 &nbsp;
+        <code>?</code> 0または1回<br>
+        <code>[abc]</code> a・b・cのいずれか &nbsp;
+        <code>[^abc]</code> a・b・c以外 &nbsp;
+        <code>(a|b)</code> aまたはb<br>
+        <code>\d</code> 数字 &nbsp;
+        <code>\w</code> 単語文字 &nbsp;
+        <code>\s</code> 空白 &nbsp;
+        <code>i</code>フラグ（末尾に <code>/i</code>）: 大文字小文字を無視
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-video"   id="btn-add-video"  >動画名称として登録</button>
+        <button class="btn btn-channel" id="btn-add-channel">チャンネル名称として登録</button>
+        <button class="btn btn-both"    id="btn-add-both"   >両方に適用する</button>
+      </div>
+    </section>
+
+    <!-- 登録済みルールカード -->
+    <section class="card">
+      <h2>登録済みルール</h2>
+      <div id="entry-list">
+        <p class="empty-msg">ルールがありません</p>
+      </div>
+    </section>
+
+    <!-- ブロックログ -->
+    <section class="card">
+      <div class="log-header">
+        <h2>ブロックログ（直近50件）</h2>
+        <button class="btn-clear-log" id="btn-clear-log">ログをクリア</button>
+      </div>
+      <div id="log-list">
+        <p class="empty-msg">ログはありません</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="dist/options.js"></script>
+</body>
+</html>
