@@ -1,6 +1,8 @@
 import { addLogs, DEFAULT_DEBOUNCE_DELAY, getBlockShortsEnabled, getDebounceDelay, getEntries, STORAGE_KEYS } from '../shared/storage';
 import { applyBlockList, CARD_SELECTOR } from './blocker';
 import { injectAllCardButtons } from './card-buttons';
+import { setupMenuInjector } from './menu-injector';
+import { DEBUG } from '../shared/debug';
 
 import type { BlockEntry } from '../shared/types';
 
@@ -29,6 +31,9 @@ async function refresh(): Promise<void> {
 (async () => {
   debounceDelay = await getDebounceDelay();
   await refresh();
+
+  // POC: 三点メニュー経由のブロックをDEBUG時のみ試験結線(card-buttonsの本流には影響しない)
+  if (DEBUG) setupMenuInjector(async () => { await refresh(); });
 
   browser.storage.onChanged.addListener(async (changes, area) => {
     if (area !== 'local') return;

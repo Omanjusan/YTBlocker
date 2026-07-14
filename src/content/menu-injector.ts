@@ -54,11 +54,18 @@ function createMenuItem(label: string, onClick: () => void): HTMLElement {
 
 /** 開いた三点メニューの listbox に区切り線とブロック用の項目を追加する。既に追加済みなら何もしない。 */
 function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
-  if (listbox.querySelector('.ytblocker-item')) return;
+  if (listbox.querySelector('.ytblocker-item')) {
+    debugLog('injectItems: already injected, skip');
+    return;
+  }
 
   const title = getVideoTitle(card);
   const channel = getChannelName(card);
-  if (!title && !channel) return;
+  debugLog('injectItems: title:', title || '(empty)', '| channel:', channel || '(empty)');
+  if (!title && !channel) {
+    debugLog('injectItems: title/channel both empty, bail');
+    return;
+  }
 
   const sep = document.createElement('div');
   sep.className = 'ytblocker-item ytblocker-sep';
@@ -84,12 +91,20 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
 
 /** YouTube側が開いた三点メニューの listbox 要素を探す。DOM構造の版差に応じて複数セレクタを試す。 */
 function findMenuListbox(): Element | null {
-  return (
-    document.querySelector('ytd-menu-popup-renderer tp-yt-paper-listbox') ||
-    document.querySelector('tp-yt-paper-listbox[role="listbox"]') ||
-    document.querySelector('ytd-menu-popup-renderer') ||
-    null
-  );
+  const candidates: [string, string][] = [
+    ['ytd-menu-popup-renderer tp-yt-paper-listbox', 'A'],
+    ['tp-yt-paper-listbox[role="listbox"]', 'B'],
+    ['ytd-menu-popup-renderer', 'C'],
+  ];
+  for (const [sel, label] of candidates) {
+    const hit = document.querySelector(sel);
+    if (hit) {
+      debugLog('findMenuListbox: matched pattern', label, sel);
+      return hit;
+    }
+  }
+  debugLog('findMenuListbox: no pattern matched');
+  return null;
 }
 
 /**
@@ -110,13 +125,13 @@ export function setupMenuInjector(onAdded: OnAdded): void {
       const card = path.find(
         (el): el is Element => el instanceof Element && typeof el.matches === 'function' && el.matches(CARD_SELECTOR)
       );
-      if (!card) { reset(); return; }
+      if (!card) { debugLog('click: card not found in composedPath'); reset(); return; }
 
       // BUTTON要素を探す（三点メニューボタン）
       const button = path.find(
         (el): el is Element => el instanceof Element && el.tagName === 'BUTTON'
       ) as HTMLButtonElement | undefined;
-      if (!button) { reset(); return; }
+      if (!button) { debugLog('click: card found but no BUTTON in composedPath, card:', card.tagName); reset(); return; }
 
       debugLog('button in card clicked, card:', card.tagName, 'aria-label:', button.getAttribute('aria-label') ?? '');
 
