@@ -1,17 +1,19 @@
 import {
-  addEntry, clearLogs, generateId, getBlockShortsEnabled,
-  getEntries, getLogs, getScoutModeEnabled, removeEntry, setBlockShortsEnabled,
-  setScoutModeEnabled, STORAGE_KEYS, updateEntry,
+  addEntry, clearLogs, estimateEntryBytes, generateId, getBlockShortsEnabled,
+  getEntries, getLogs, getScoutModeEnabled, getUsageBytes, itemByteSize, MAX_ENTRY_BYTES,
+  removeEntry, setBlockShortsEnabled, setScoutModeEnabled, STORAGE_KEYS, SYNC_TOTAL_BUDGET, updateEntry,
 } from '../shared/storage';
 import type { BlockEntry, MatchTarget } from '../shared/types';
 
 const versionLabel    = document.getElementById('version-label')    as HTMLSpanElement;
+const usageBadge      = document.getElementById('usage-badge')      as HTMLSpanElement;
 const shortsCheckbox  = document.getElementById('shorts-checkbox')  as HTMLInputElement;
 const scoutCheckbox   = document.getElementById('scout-checkbox')   as HTMLInputElement;
 const formCard        = document.getElementById('form-card')        as HTMLElement;
 const sampleInput     = document.getElementById('sample-input')     as HTMLInputElement;
 const regexInput      = document.getElementById('regex-input')      as HTMLInputElement;
 const matchIndicator  = document.getElementById('match-indicator')  as HTMLSpanElement;
+const byteBudgetNote  = document.getElementById('byte-budget')      as HTMLParagraphElement;
 const btnSubmit       = document.getElementById('btn-submit')       as HTMLButtonElement;
 const btnCancel       = document.getElementById('btn-cancel')       as HTMLButtonElement;
 const entryList       = document.getElementById('entry-list')       as HTMLDivElement;
@@ -20,6 +22,30 @@ const btnClearLog     = document.getElementById('btn-clear-log')    as HTMLButto
 
 /** 編集中のブロックルールID。null なら新規登録モード。 */
 let editingId: string | null = null;
+
+/** storage.sync の現在の使用バイト数。起動時に実測し、以降は onChanged の差分で更新する(毎回全チャンクを読み直さない)。 */
+let usedBytes = 0;
+/** 容量が100%に達しているかどうか。達している場合は登録処理そのものをスキップする。 */
+let usageAtCapacity = false;
+
+// ---- NG登録容量ゲージ ----
+
+function renderUsage(): void {
+  const percent = Math.min(100, Math.round((usedBytes / SYNC_TOTAL_BUDGET) * 100));
+  usageAtCapacity = percent >= 100;
+
+  usageBadge.textContent = `${percent}%`;
+  usageBadge.classList.remove('usage-warn', 'usage-full');
+  if (percent >= 90) usageBadge.classList.add('usage-full');
+  else if (percent >= 70) usageBadge.classList.add('usage-warn');
+
+  updateByteBudget();
+}
+
+getUsageBytes().then((bytes) => {
+  usedBytes = bytes;
+  renderUsage();
+});
 
 // ---- バージョン表示 ----
 
@@ -72,6 +98,31 @@ function getSelectedTarget(): MatchTarget {
   return (document.querySelector('input[name="target"]:checked') as HTMLInputElement).value as MatchTarget;
 }
 
+/**
+ * 入力中のパターンがルール1件としてあと何バイト入るかをリアルタイムで表示し、
+ * 上限超過または容量100%到達時は登録ボタンをガードする。
+ */
+function updateByteBudget(): void {
+  if (usageAtCapacity) {
+    byteBudgetNote.textContent = 'NG登録容量が上限に達しているため、これ以上登録できません';
+    btnSubmit.disabled = true;
+    return;
+  }
+
+  const used = estimateEntryBytes(getSelectedTarget(), 'regex', regexInput.value);
+  const remaining = MAX_ENTRY_BYTES - used;
+
+  byteBudgetNote.textContent = remaining >= 0
+    ? `あと約${remaining}バイト入力できます`
+    : 'パターンが長すぎます(バイト数が上限を超えています)';
+  btnSubmit.disabled = remaining < 0;
+}
+
+regexInput.addEventListener('input', updateByteBudget);
+document.querySelectorAll<HTMLInputElement>('input[name="target"]').forEach((el) => {
+  el.addEventListener('change', updateByteBudget);
+});
+
 function setSelectedTarget(target: MatchTarget): void {
   const radio = document.querySelector<HTMLInputElement>(`input[name="target"][value="${target}"]`);
   if (radio) radio.checked = true;
@@ -84,6 +135,7 @@ function enterEditMode(entry: BlockEntry): void {
   sampleInput.value = '';
   setSelectedTarget(entry.target);
   updateMatchIndicator();
+  updateByteBudget();
   formCard.classList.add('is-editing');
   btnSubmit.textContent = '更新';
   regexInput.focus();
@@ -96,6 +148,7 @@ function exitEditMode(): void {
   sampleInput.value = '';
   setSelectedTarget('video');
   updateMatchIndicator();
+  updateByteBudget();
   formCard.classList.remove('is-editing');
   btnSubmit.textContent = '登録';
 }
@@ -104,6 +157,7 @@ btnCancel.addEventListener('click', exitEditMode);
 
 /** フォームの内容で新規登録、または編集中のルールを更新する。 */
 async function handleSubmit(): Promise<void> {
+  if (btnSubmit.disabled) return;
   const raw = regexInput.value.trim();
   if (!raw) return;
   const target = getSelectedTarget();
@@ -123,6 +177,7 @@ async function handleSubmit(): Promise<void> {
     regexInput.value = '';
     sampleInput.value = '';
     updateMatchIndicator();
+    updateByteBudget();
   }
 
   await renderList();
@@ -241,9 +296,20 @@ btnClearLog.addEventListener('click', async () => {
 // ---- ストレージ変更をリアルタイム反映 ----
 
 browser.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local') return;
-  if (changes[STORAGE_KEYS.list]) renderList();
-  if (changes[STORAGE_KEYS.log])  renderLog();
+  if (area === 'local' && changes[STORAGE_KEYS.log]) renderLog();
+
+  if (area === 'sync') {
+    // 全チャンクを読み直さず、変化したキーごとの差分バイト数だけキャッシュへ反映する
+    for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
+      const oldSize = oldValue === undefined ? 0 : itemByteSize(key, oldValue);
+      const newSize = newValue === undefined ? 0 : itemByteSize(key, newValue);
+      usedBytes += newSize - oldSize;
+    }
+    renderUsage();
+
+    const ruleChanged = Object.keys(changes).some((k) => k.startsWith(STORAGE_KEYS.rulesPrefix));
+    if (ruleChanged) renderList();
+  }
 });
 
 // ---- 初回描画 ----

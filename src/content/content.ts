@@ -34,12 +34,16 @@ async function refresh(): Promise<void> {
   setupMenuInjector(async () => { await refresh(); });
 
   browser.storage.onChanged.addListener(async (changes, area) => {
-    if (area !== 'local') return;
-    if (changes[STORAGE_KEYS.scoutMode]) {
-      scoutMode = (changes[STORAGE_KEYS.scoutMode].newValue as boolean) ?? false;
+    if (area !== 'sync') return;
+
+    if (changes[STORAGE_KEYS.settings]) {
+      const newSettings = changes[STORAGE_KEYS.settings].newValue as { scoutMode?: boolean } | undefined;
+      scoutMode = newSettings?.scoutMode ?? false;
       scheduleScout(); // ONにした瞬間に現在のページを一度走査する
     }
-    if (!changes[STORAGE_KEYS.list] && !changes[STORAGE_KEYS.blockShorts]) return;
+
+    const ruleChanged = Object.keys(changes).some((k) => k.startsWith(STORAGE_KEYS.rulesPrefix));
+    if (!ruleChanged && !changes[STORAGE_KEYS.settings]) return;
     await refresh();
   });
 
