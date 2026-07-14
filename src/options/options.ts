@@ -1,6 +1,6 @@
 import {
   addEntry, clearLogs, DEFAULT_DEBOUNCE_DELAY, generateId, getBlockShortsEnabled, getDebounceDelay,
-  getEntries, getLogs, removeEntry, setBlockShortsEnabled, setDebounceDelay,
+  getEntries, getLogs, removeEntry, setBlockShortsEnabled, setDebounceDelay, STORAGE_KEYS,
 } from '../shared/storage';
 import type { BlockEntry, MatchTarget } from '../shared/types';
 
@@ -188,8 +188,8 @@ btnClearLog.addEventListener('click', async () => {
 
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
-  if (changes['ytblocker_list']) renderList();
-  if (changes['ytblocker_log'])  renderLog();
+  if (changes[STORAGE_KEYS.list]) renderList();
+  if (changes[STORAGE_KEYS.log])  renderLog();
 });
 
 // ---- 初回描画 ----

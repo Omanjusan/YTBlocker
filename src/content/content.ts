@@ -1,4 +1,4 @@
-import { addLogs, DEFAULT_DEBOUNCE_DELAY, getBlockShortsEnabled, getDebounceDelay, getEntries } from '../shared/storage';
+import { addLogs, DEFAULT_DEBOUNCE_DELAY, getBlockShortsEnabled, getDebounceDelay, getEntries, STORAGE_KEYS } from '../shared/storage';
 import { applyBlockList, CARD_SELECTOR } from './blocker';
 import { injectAllCardButtons } from './card-buttons';
 
@@ -29,10 +29,10 @@ async function refresh(): Promise<void> {
 
   browser.storage.onChanged.addListener(async (changes, area) => {
     if (area !== 'local') return;
-    if (changes['ytblocker_debounce_delay']) {
-      debounceDelay = (changes['ytblocker_debounce_delay'].newValue as number) ?? DEFAULT_DEBOUNCE_DELAY;
+    if (changes[STORAGE_KEYS.debounceDelay]) {
+      debounceDelay = (changes[STORAGE_KEYS.debounceDelay].newValue as number) ?? DEFAULT_DEBOUNCE_DELAY;
     }
-    if (!changes['ytblocker_list'] && !changes['ytblocker_block_shorts']) return;
+    if (!changes[STORAGE_KEYS.list] && !changes[STORAGE_KEYS.blockShorts]) return;
     await refresh();
   });
 

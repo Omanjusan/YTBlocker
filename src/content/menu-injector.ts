@@ -1,6 +1,4 @@
-import { addEntry, addLogs, generateId } from '../shared/storage';
-import { CARD_SELECTOR, getChannelName, getVideoTitle } from './blocker';
-import { showToast } from './toast';
+import { blockAndLog, CARD_SELECTOR, getChannelName, getVideoTitle } from './blocker';
 
 type OnAdded = () => void;
 
@@ -66,12 +64,7 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
   if (title) {
     listbox.appendChild(
       createMenuItem('🚫 この動画をブロック', async () => {
-        const id = generateId();
-        await addEntry({ id, target: 'video', matchType: 'exact', value: title, createdAt: Date.now() });
-        await addLogs([{ videoTitle: title, channelName: channel, matchedValue: title, blockedAt: Date.now() }]);
-        card.remove();
-        onAdded();
-        showToast(title, id);
+        await blockAndLog(card, 'video', title, title, channel, onAdded);
       })
     );
   }
@@ -79,12 +72,7 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
   if (channel) {
     listbox.appendChild(
       createMenuItem('🚫 このチャンネルをブロック', async () => {
-        const id = generateId();
-        await addEntry({ id, target: 'channel', matchType: 'exact', value: channel, createdAt: Date.now() });
-        await addLogs([{ videoTitle: title, channelName: channel, matchedValue: channel, blockedAt: Date.now() }]);
-        card.remove();
-        onAdded();
-        showToast(channel, id);
+        await blockAndLog(card, 'channel', channel, title, channel, onAdded);
       })
     );
   }
@@ -100,8 +88,6 @@ function findMenuListbox(): Element | null {
 }
 
 export function setupMenuInjector(onAdded: OnAdded): void {
-  console.log('[YTBlocker] setupMenuInjector: registered');
-
   document.addEventListener(
     'click',
     (e) => {
@@ -119,26 +105,20 @@ export function setupMenuInjector(onAdded: OnAdded): void {
       ) as HTMLButtonElement | undefined;
       if (!button) { reset(); return; }
 
-      const ariaLabel = button.getAttribute('aria-label') ?? '';
-      console.log('[YTBlocker] button in card clicked, card:', card.tagName, 'aria-label:', ariaLabel);
-
       reset();
       pendingCard = card;
 
       menuObserver = new MutationObserver(() => {
         if (!pendingCard) return;
         const listbox = findMenuListbox();
-        console.log('[YTBlocker] menuObserver fired, listbox:', listbox?.tagName ?? 'null');
         if (!listbox) return;
         injectItems(pendingCard, listbox, onAdded);
         reset();
       });
 
       menuObserver.observe(document.body, { childList: true, subtree: true });
-      console.log('[YTBlocker] menuObserver: observing for card', card.tagName);
 
       cleanupTimer = setTimeout(() => {
-        console.log('[YTBlocker] cleanupTimer: 2s elapsed, resetting (listbox not found)');
         reset();
       }, 2000);
     },

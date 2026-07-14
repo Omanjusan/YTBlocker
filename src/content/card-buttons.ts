@@ -1,6 +1,4 @@
-import { addEntry, addLogs, generateId } from '../shared/storage';
-import { CARD_SELECTOR, getChannelName, getVideoTitle } from './blocker';
-import { showToast } from './toast';
+import { blockAndLog, CARD_SELECTOR, getChannelName, getVideoTitle } from './blocker';
 
 type OnAdded = () => void;
 
@@ -51,12 +49,7 @@ export function injectCardButtons(card: Element, onAdded: OnAdded): void {
     row.appendChild(makeBtn('🚫 動画', '#c00', async () => {
       const currentTitle   = getVideoTitle(card);
       const currentChannel = getChannelName(card);
-      const id = generateId();
-      await addEntry({ id, target: 'video', matchType: 'exact', value: currentTitle, createdAt: Date.now() });
-      await addLogs([{ videoTitle: currentTitle, channelName: currentChannel, matchedValue: currentTitle, blockedAt: Date.now() }]);
-      card.remove();
-      onAdded();
-      showToast(currentTitle, id);
+      await blockAndLog(card, 'video', currentTitle, currentTitle, currentChannel, onAdded);
     }));
   }
 
@@ -64,12 +57,7 @@ export function injectCardButtons(card: Element, onAdded: OnAdded): void {
     row.appendChild(makeBtn('🚫 CH', '#107516', async () => {
       const currentTitle   = getVideoTitle(card);
       const currentChannel = getChannelName(card);
-      const id = generateId();
-      await addEntry({ id, target: 'channel', matchType: 'exact', value: currentChannel, createdAt: Date.now() });
-      await addLogs([{ videoTitle: currentTitle, channelName: currentChannel, matchedValue: currentChannel, blockedAt: Date.now() }]);
-      card.remove();
-      onAdded();
-      showToast(currentChannel, id);
+      await blockAndLog(card, 'channel', currentChannel, currentTitle, currentChannel, onAdded);
     }));
   }
 
@@ -77,20 +65,7 @@ export function injectCardButtons(card: Element, onAdded: OnAdded): void {
 }
 
 export function injectAllCardButtons(onAdded: OnAdded): void {
-  const cards = document.querySelectorAll<Element>(CARD_SELECTOR);
-  console.log('[YTBlocker] injectAll: cards found =', cards.length);
-  cards.forEach((card) => {
-    if (card.hasAttribute(INJECTED_ATTR)) return;
-    const title   = getVideoTitle(card);
-    const channel = getChannelName(card);
-    const lockup  = card.querySelector('yt-lockup-view-model');
-    console.log('[YTBlocker] card', card.tagName,
-      '| title:', title || '(empty)',
-      '| ch:', channel || '(empty)',
-      '| lockup:', !!lockup,
-      '| lockup.shadowRoot:', lockup ? !!lockup.shadowRoot : 'n/a',
-      '| watch link:', !!card.querySelector('a[href*="/watch"]'),
-    );
+  document.querySelectorAll<Element>(CARD_SELECTOR).forEach((card) => {
     injectCardButtons(card, onAdded);
   });
 }

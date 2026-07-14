@@ -1,10 +1,17 @@
 import type { BlockEntry, BlockLog } from './types';
 
-const KEY           = 'ytblocker_list';
-const LOG_KEY       = 'ytblocker_log';
-const SHORTS_KEY    = 'ytblocker_block_shorts';
-const DEBOUNCE_KEY  = 'ytblocker_debounce_delay';
-const LOG_MAX       = 50;
+export const STORAGE_KEYS = {
+  list: 'ytblocker_list',
+  log: 'ytblocker_log',
+  blockShorts: 'ytblocker_block_shorts',
+  debounceDelay: 'ytblocker_debounce_delay',
+} as const;
+
+const KEY           = STORAGE_KEYS.list;
+const LOG_KEY        = STORAGE_KEYS.log;
+const SHORTS_KEY     = STORAGE_KEYS.blockShorts;
+const DEBOUNCE_KEY   = STORAGE_KEYS.debounceDelay;
+const LOG_MAX        = 50;
 
 export const DEFAULT_DEBOUNCE_DELAY = 300;
 

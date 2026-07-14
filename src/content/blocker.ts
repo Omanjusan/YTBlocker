@@ -1,3 +1,6 @@
+import { addEntry, addLogs, generateId } from '../shared/storage';
+import { showToast } from './toast';
+
 import type { BlockEntry, BlockLog } from '../shared/types';
 
 export const CARD_SELECTOR = [
@@ -55,6 +58,22 @@ export function getChannelName(card: Element): string {
     if (text) return text;
   }
   return '';
+}
+
+export async function blockAndLog(
+  card: Element,
+  target: 'video' | 'channel',
+  value: string,
+  title: string,
+  channel: string,
+  onAdded: () => void
+): Promise<void> {
+  const id = generateId();
+  await addEntry({ id, target, matchType: 'exact', value, createdAt: Date.now() });
+  await addLogs([{ videoTitle: title, channelName: channel, matchedValue: value, blockedAt: Date.now() }]);
+  card.remove();
+  onAdded();
+  showToast(value, id);
 }
 
 export function isShorts(card: Element): boolean {
