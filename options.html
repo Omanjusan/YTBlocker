@@ -16,12 +16,34 @@
     }
 
     header {
-      background: #ff0000;
-      color: #fff;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      background: #eeeeee;
+      color: #0f0f0f;
       padding: 14px 24px;
       font-size: 18px;
       font-weight: bold;
     }
+    header .title-group {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    header .version {
+      font-size: 12px;
+      font-weight: normal;
+      color: #888;
+    }
+    header .repo-link {
+      font-size: 11px;
+      font-weight: normal;
+      color: #888;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    header .repo-link:hover { text-decoration: underline; }
 
     main {
       max-width: 720px;
@@ -45,12 +67,40 @@
       margin-bottom: 16px;
       color: #0f0f0f;
     }
+    .card.is-editing {
+      background: #fffaf0;
+      border-color: #f0c674;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .card-head h2 { margin-bottom: 0; }
+    .edit-tag {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e65100;
+      background: #fff3e0;
+      border: 1px solid #f0c674;
+      padding: 3px 9px;
+      border-radius: 10px;
+    }
+    .is-editing .edit-tag { display: inline-flex; }
 
     /* ショート動画チェックボックス */
     .shorts-row {
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+    .shorts-row[hidden] {
+      display: none !important;
     }
     .shorts-row input[type="checkbox"] {
       width: 16px;
@@ -68,6 +118,7 @@
     /* フォーム行 */
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
     .field label { font-size: 12px; font-weight: 600; color: #606060; }
+    .field-note { font-size: 11px; color: #888; line-height: 1.5; }
     .field input {
       padding: 8px 10px;
       border: 1px solid #ccc;
@@ -110,6 +161,31 @@
       font-family: 'Consolas', 'Courier New', monospace;
     }
 
+    /* 適用対象ラジオ */
+    fieldset.target-group {
+      border: none;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    fieldset.target-group legend { font-size: 12px; font-weight: 600; color: #606060; margin-bottom: 8px; padding: 0; }
+    .target-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #606060;
+    }
+    .target-option input { accent-color: currentColor; cursor: pointer; }
+    .target-option:has(input:checked)[data-target="video"]   { border-color: #065fd4; color: #065fd4; background: #e3efff; }
+    .target-option:has(input:checked)[data-target="channel"] { border-color: #107516; color: #107516; background: #e6f4e7; }
+    .target-option:has(input:checked)[data-target="both"]    { border-color: #6a1b9a; color: #6a1b9a; background: #f3e5f5; }
+
     /* 登録ボタン */
     .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn {
@@ -120,12 +196,13 @@
       cursor: pointer;
       font-weight: 600;
     }
-    .btn-video    { background: #065fd4; color: #fff; }
-    .btn-video:hover    { background: #0356c4; }
-    .btn-channel  { background: #107516; color: #fff; }
-    .btn-channel:hover  { background: #0d5f12; }
-    .btn-both     { background: #6a1b9a; color: #fff; }
-    .btn-both:hover     { background: #581691; }
+    .btn-submit { background: #065fd4; color: #fff; }
+    .btn-submit:hover { background: #0356c4; }
+    .is-editing .btn-submit { background: #e65100; }
+    .is-editing .btn-submit:hover { background: #cc4700; }
+    .btn-cancel { display: none; background: transparent; color: #606060; border: 1px solid #ccc; }
+    .btn-cancel:hover { background: #f5f5f5; }
+    .is-editing .btn-cancel { display: inline-block; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* 登録済みリスト */
@@ -158,16 +235,22 @@
       word-break: break-all;
       color: #0f0f0f;
     }
-    .btn-delete {
+    .entry-item.is-target {
+      border-color: #f0c674;
+      background: #fffaf0;
+    }
+    .btn-edit, .btn-delete {
       padding: 4px 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
       background: #fff;
       font-size: 12px;
       cursor: pointer;
-      color: #c00;
       flex-shrink: 0;
     }
+    .btn-edit { color: #065fd4; }
+    .btn-edit:hover { background: #e3efff; border-color: #065fd4; }
+    .btn-delete { color: #c00; }
     .btn-delete:hover { background: #fff0f0; border-color: #c00; }
 
     .empty-msg { font-size: 13px; color: #aaa; text-align: center; padding: 12px 0; }
@@ -215,7 +298,14 @@
   </style>
 </head>
 <body>
-  <header>YTBlocker 設定</header>
+  <header>
+    <span class="title-group">
+      <span>YTBlocker</span>
+      <span class="version" id="version-label"></span>
+      <span>設定</span>
+    </span>
+    <a class="repo-link" href="https://github.com/Omanjusan/YTBlocker" target="_blank" rel="noopener">github.com/Omanjusan/YTBlocker</a>
+  </header>
 
   <main>
     <!-- ショート動画設定 -->
@@ -224,28 +314,45 @@
         <input type="checkbox" id="shorts-checkbox" />
         <label for="shorts-checkbox">ショート動画をすべて非表示にする</label>
       </div>
-      <div class="shorts-row">
+      <div class="shorts-row" hidden>
         <input type="checkbox" id="scout-checkbox" />
         <label for="scout-checkbox">観測モード（未対応カードをコンソールに報告。通常はOFF）</label>
       </div>
     </section>
 
     <!-- 正規表現ルール追加カード -->
-    <section class="card">
-      <h2>ブロックルールを追加（正規表現）</h2>
-
-      <div class="field">
-        <label for="sample-input">サンプル文字列（動画タイトルまたはチャンネル名）</label>
-        <input id="sample-input" type="text" placeholder="例: ゲーム実況【ヒカキン】" />
+    <section class="card" id="form-card">
+      <div class="card-head">
+        <h2>ブロックルールを追加（正規表現）</h2>
+        <span class="edit-tag">✎ 編集中</span>
       </div>
 
       <div class="field">
-        <label for="regex-input">正規表現パターン</label>
+        <label for="sample-input">サンプル文字列（動画タイトルまたはチャンネル名）　例 test ch</label>
+        <input id="sample-input" type="text" />
+      </div>
+
+      <div class="field">
+        <label for="regex-input">正規表現パターン　例 aaaa | bbbb</label>
+        <p class="field-note">サンプル文字列との判定で末尾の❌⭕が変わります。サンプル文字列にHITするなら⭕が表示されます。サンプル文字列が空なら常に❌表示</p>
         <div class="regex-row">
-          <input id="regex-input" type="text" placeholder="例: ヒカキン|はじめしゃちょー" />
+          <input id="regex-input" type="text" />
           <span id="match-indicator">❌</span>
         </div>
       </div>
+
+      <fieldset class="target-group">
+        <legend>適用対象</legend>
+        <label class="target-option" data-target="video">
+          <input type="radio" name="target" value="video" checked />動画
+        </label>
+        <label class="target-option" data-target="channel">
+          <input type="radio" name="target" value="channel" />チャンネル
+        </label>
+        <label class="target-option" data-target="both">
+          <input type="radio" name="target" value="both" />両方
+        </label>
+      </fieldset>
 
       <div class="manual">
         <code>^</code> 先頭 &nbsp;
@@ -264,9 +371,8 @@
       </div>
 
       <div class="btn-group">
-        <button class="btn btn-video"   id="btn-add-video"  >動画名称として登録</button>
-        <button class="btn btn-channel" id="btn-add-channel">チャンネル名称として登録</button>
-        <button class="btn btn-both"    id="btn-add-both"   >両方に適用する</button>
+        <button class="btn btn-submit" id="btn-submit">登録</button>
+        <button class="btn btn-cancel" id="btn-cancel">編集をキャンセル</button>
       </div>
     </section>
 

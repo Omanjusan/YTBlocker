@@ -1,21 +1,29 @@
 import {
   addEntry, clearLogs, generateId, getBlockShortsEnabled,
   getEntries, getLogs, getScoutModeEnabled, removeEntry, setBlockShortsEnabled,
-  setScoutModeEnabled, STORAGE_KEYS,
+  setScoutModeEnabled, STORAGE_KEYS, updateEntry,
 } from '../shared/storage';
 import type { BlockEntry, MatchTarget } from '../shared/types';
 
+const versionLabel    = document.getElementById('version-label')    as HTMLSpanElement;
 const shortsCheckbox  = document.getElementById('shorts-checkbox')  as HTMLInputElement;
 const scoutCheckbox   = document.getElementById('scout-checkbox')   as HTMLInputElement;
+const formCard        = document.getElementById('form-card')        as HTMLElement;
 const sampleInput     = document.getElementById('sample-input')     as HTMLInputElement;
 const regexInput      = document.getElementById('regex-input')      as HTMLInputElement;
 const matchIndicator  = document.getElementById('match-indicator')  as HTMLSpanElement;
-const btnAddVideo     = document.getElementById('btn-add-video')    as HTMLButtonElement;
-const btnAddChannel   = document.getElementById('btn-add-channel')  as HTMLButtonElement;
-const btnAddBoth      = document.getElementById('btn-add-both')     as HTMLButtonElement;
+const btnSubmit       = document.getElementById('btn-submit')       as HTMLButtonElement;
+const btnCancel       = document.getElementById('btn-cancel')       as HTMLButtonElement;
 const entryList       = document.getElementById('entry-list')       as HTMLDivElement;
 const logList         = document.getElementById('log-list')         as HTMLDivElement;
 const btnClearLog     = document.getElementById('btn-clear-log')    as HTMLButtonElement;
+
+/** 編集中のブロックルールID。null なら新規登録モード。 */
+let editingId: string | null = null;
+
+// ---- バージョン表示 ----
+
+versionLabel.textContent = `v${browser.runtime.getManifest().version}`;
 
 // ---- ショート動画設定 ----
 
@@ -58,31 +66,69 @@ function updateMatchIndicator(): void {
 regexInput.addEventListener('input', updateMatchIndicator);
 sampleInput.addEventListener('input', updateMatchIndicator);
 
-// ---- 登録 ----
+// ---- 登録・編集 ----
 
-/** 正規表現入力欄の内容を matchType: 'regex' のブロックルールとして登録する。 */
-async function handleAdd(target: MatchTarget): Promise<void> {
-  const raw = regexInput.value.trim();
-  if (!raw) return;
+function getSelectedTarget(): MatchTarget {
+  return (document.querySelector('input[name="target"]:checked') as HTMLInputElement).value as MatchTarget;
+}
 
-  const entry: BlockEntry = {
-    id: generateId(),
-    target,
-    matchType: 'regex',
-    value: raw,
-    createdAt: Date.now(),
-  };
+function setSelectedTarget(target: MatchTarget): void {
+  const radio = document.querySelector<HTMLInputElement>(`input[name="target"][value="${target}"]`);
+  if (radio) radio.checked = true;
+}
 
-  await addEntry(entry);
+/** 指定エントリの内容をフォームへ流し込み、編集モードへ切り替える。 */
+function enterEditMode(entry: BlockEntry): void {
+  editingId = entry.id;
+  regexInput.value = entry.value;
+  sampleInput.value = '';
+  setSelectedTarget(entry.target);
+  updateMatchIndicator();
+  formCard.classList.add('is-editing');
+  btnSubmit.textContent = '更新';
+  regexInput.focus();
+}
+
+/** 編集モードを終了し、新規登録モードに戻す。 */
+function exitEditMode(): void {
+  editingId = null;
   regexInput.value = '';
   sampleInput.value = '';
+  setSelectedTarget('video');
   updateMatchIndicator();
+  formCard.classList.remove('is-editing');
+  btnSubmit.textContent = '登録';
+}
+
+btnCancel.addEventListener('click', exitEditMode);
+
+/** フォームの内容で新規登録、または編集中のルールを更新する。 */
+async function handleSubmit(): Promise<void> {
+  const raw = regexInput.value.trim();
+  if (!raw) return;
+  const target = getSelectedTarget();
+
+  if (editingId) {
+    await updateEntry(editingId, { target, value: raw });
+    exitEditMode();
+  } else {
+    const entry: BlockEntry = {
+      id: generateId(),
+      target,
+      matchType: 'regex',
+      value: raw,
+      createdAt: Date.now(),
+    };
+    await addEntry(entry);
+    regexInput.value = '';
+    sampleInput.value = '';
+    updateMatchIndicator();
+  }
+
   await renderList();
 }
 
-btnAddVideo  .addEventListener('click', () => handleAdd('video'));
-btnAddChannel.addEventListener('click', () => handleAdd('channel'));
-btnAddBoth   .addEventListener('click', () => handleAdd('both'));
+btnSubmit.addEventListener('click', handleSubmit);
 
 // ---- ルールリスト描画 ----
 
@@ -112,7 +158,7 @@ async function renderList(): Promise<void> {
 
   for (const entry of sorted) {
     const item = document.createElement('div');
-    item.className = 'entry-item';
+    item.className = 'entry-item' + (entry.id === editingId ? ' is-target' : '');
 
     const targetBadge = document.createElement('span');
     targetBadge.className = `entry-badge ${targetBadgeClass(entry)}`;
@@ -126,15 +172,21 @@ async function renderList(): Promise<void> {
     valueEl.className = 'entry-value';
     valueEl.textContent = entry.value;
 
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-edit';
+    editBtn.textContent = '編集';
+    editBtn.addEventListener('click', () => enterEditMode(entry));
+
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-delete';
     deleteBtn.textContent = '削除';
     deleteBtn.addEventListener('click', async () => {
       await removeEntry(entry.id);
+      if (editingId === entry.id) exitEditMode();
       await renderList();
     });
 
-    item.append(targetBadge, typeBadge, valueEl, deleteBtn);
+    item.append(targetBadge, typeBadge, valueEl, editBtn, deleteBtn);
     entryList.appendChild(item);
   }
 }

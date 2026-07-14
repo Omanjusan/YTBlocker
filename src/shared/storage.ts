@@ -33,6 +33,13 @@ export async function removeEntry(id: string): Promise<void> {
   await browser.storage.local.set({ [KEY]: entries.filter((e) => e.id !== id) });
 }
 
+/** 指定IDのブロックルールを部分更新する。該当IDが無ければ何もしない。 */
+export async function updateEntry(id: string, patch: Partial<Pick<BlockEntry, 'target' | 'value'>>): Promise<void> {
+  const entries = await getEntries();
+  const next = entries.map((e) => (e.id === id ? { ...e, ...patch } : e));
+  await browser.storage.local.set({ [KEY]: next });
+}
+
 /** ブロック履歴ログを新しい順に取得する。 */
 export async function getLogs(): Promise<BlockLog[]> {
   const result = await browser.storage.local.get(LOG_KEY);
