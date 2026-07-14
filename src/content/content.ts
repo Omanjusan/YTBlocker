@@ -6,6 +6,8 @@ import { DEBUG } from '../shared/debug';
 
 import type { BlockEntry } from '../shared/types';
 
+console.error('YTBLOCKER CONTENT SCRIPT LOADED'); // POC切り分け用、後で削除
+
 let blockEntries: BlockEntry[] = [];
 let blockShorts = false;
 let debounceDelay = DEFAULT_DEBOUNCE_DELAY;

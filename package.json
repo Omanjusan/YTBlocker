@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "build": "node build.js",
-    "watch": "node build.js --watch"
+    "watch": "node build.js --watch",
+    "experiment": "web-ext run --source-dir=. --firefox-binary=flatpak:org.mozilla.firefox --firefox-profile=develop --keep-profile-changes"
   },
   "devDependencies": {
     "@types/firefox-webext-browser": "^120.0.0",
     "esbuild": "^0.21.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "web-ext": "^10.5.0"
   }
 }

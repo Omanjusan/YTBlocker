@@ -6,6 +6,7 @@ type OnAdded = () => void;
 let pendingCard: Element | null = null;
 let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 let menuObserver: MutationObserver | null = null;
+let injectAttempts = 0;
 
 /** 三点メニュー監視の途中状態(監視中のカード・MutationObserver・タイムアウト)を全て破棄する。 */
 function reset(): void {
@@ -14,10 +15,14 @@ function reset(): void {
   menuObserver = null;
   pendingCard = null;
   cleanupTimer = null;
+  injectAttempts = 0;
 }
 
 /** YouTubeの三点メニュー(tp-yt-paper-listbox)に挿入する項目1個分のDOM要素を生成する。 */
 function createMenuItem(label: string, onClick: () => void): HTMLElement {
+  // メニューのポップアップ内では --yt-spec-text-primary が解決されないことがあるため、
+  // YouTubeがダークモード時に付ける <html dark> 属性でフォールバック色を切り替える
+  const fallbackColor = document.documentElement.hasAttribute('dark') ? '#f1f1f1' : '#0f0f0f';
   const el = document.createElement('div');
   el.className = 'ytblocker-item';
   el.setAttribute('role', 'menuitem');
@@ -31,7 +36,7 @@ function createMenuItem(label: string, onClick: () => void): HTMLElement {
     'align-items:center',
     'font-size:1.4rem',
     'font-family:Roboto,Arial,sans-serif',
-    'color:var(--yt-spec-text-primary,#0f0f0f)',
+    `color:var(--yt-spec-text-primary,${fallbackColor})`,
     'white-space:nowrap',
     'box-sizing:border-box',
   ].join(';');
@@ -87,6 +92,18 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
       })
     );
   }
+
+  // POC調査用: 注入した項目がYouTube側の再レンダリングでいつ消されるかを追跡する
+  for (const ms of [0, 100, 500, 1000]) {
+    setTimeout(() => {
+      debugLog(
+        `survival check +${ms}ms:`,
+        'items in listbox =', listbox.querySelectorAll('.ytblocker-item').length,
+        '| items in document =', document.querySelectorAll('.ytblocker-item').length,
+        '| listbox still in DOM =', document.contains(listbox),
+      );
+    }, ms);
+  }
 }
 
 /** YouTube側が開いた三点メニューの listbox 要素を探す。DOM構造の版差に応じて複数セレクタを試す。 */
@@ -111,7 +128,10 @@ function findMenuListbox(): Element | null {
  * カード内の三点メニューボタンのクリックを document 全体で捕捉し、
  * メニューが開いたタイミングで動的にブロック用の項目を注入する。
  * メニューは動的に生成されるため、クリック後に MutationObserver で
- * listbox の出現を待ち、2秒以内に見つからなければ諦めてリセットする。
+ * listbox の出現とネイティブ項目の構築完了を待ってから注入する
+ * (空のlistboxへの注入はYouTube側の項目構築で上書き消去されるため)。
+ * 注入後も監視を続け、消された場合は最大3回まで再注入する。
+ * 2秒経過で監視を終了する。
  */
 export function setupMenuInjector(onAdded: OnAdded): void {
   debugLog('setupMenuInjector: registered');
@@ -141,17 +161,37 @@ export function setupMenuInjector(onAdded: OnAdded): void {
       menuObserver = new MutationObserver(() => {
         if (!pendingCard) return;
         const listbox = findMenuListbox();
-        debugLog('menuObserver fired, listbox:', listbox?.tagName ?? 'null');
         if (!listbox) return;
+
+        // 空のlistboxに注入するとYouTube(Polymer)側の項目構築で上書き消去されるため、
+        // ネイティブ項目が流し込まれるまで注入を待つ
+        const nativeItem = listbox.querySelector(
+          'ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer, tp-yt-paper-item'
+        );
+        if (!nativeItem) {
+          debugLog('menuObserver: listbox found but no native items yet, waiting');
+          return;
+        }
+
+        // 注入済みで生き残っていれば何もしない。消されていたら再注入(上限付き)
+        if (listbox.querySelector('.ytblocker-item')) return;
+        if (injectAttempts >= 3) {
+          debugLog('menuObserver: inject attempts exhausted, giving up');
+          reset();
+          return;
+        }
+        injectAttempts++;
+        debugLog('menuObserver: injecting (attempt', injectAttempts, ')');
         injectItems(pendingCard, listbox, onAdded);
-        reset();
+        // 即resetせず監視を継続し、YouTube側に消された場合は次のmutationで再注入する。
+        // 監視はcleanupTimerで終了する。
       });
 
       menuObserver.observe(document.body, { childList: true, subtree: true });
       debugLog('menuObserver: observing for card', card.tagName);
 
       cleanupTimer = setTimeout(() => {
-        debugLog('cleanupTimer: 2s elapsed, resetting (listbox not found)');
+        debugLog('cleanupTimer: 2s elapsed, stop watching menu');
         reset();
       }, 2000);
     },
