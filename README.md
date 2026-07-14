@@ -1,2 +1,26 @@
 # YTBlocker
-(under construction)A Firefox add-on that blocks distracting YouTube content — no login required. Filters unwanted videos and recommendations locally in your browser, with no accounts and no data collection
+
+## 目的
+
+Firefoxの拡張機能です。Youtubeの動画を非ログイン状態でも自動読み込みされても表示をブロックできます。既存のものは日本語でのブロックがうまく機能しないことがあったのでそれを補完しました
+
+## 機能
+
+- Youtubeのみが対象.無限スクロールによる好みでない動画カードを動画名もしくはチャンネル名の一致で非表示化
+- 正規表現で部分一致の文字列で非表示対象を指定可能
+
+## 特徴
+
+- 2通りの非表示導線
+動画脇にある︙メニュー内から直接動画名もしくはチャンネル名でブロック（こちらは完全一致）もしくは文字列指定の2通り
+- 動画再生中のおすすめ動画欄も︙のメニュー対象
+
+## インストール
+
+Firefoxの拡張機能YTBlockerで検索してインストールしてください
+
+## 使い方
+
+インストールが終わったらYoutubeにアクセスし、非表示化したい動画にある︙メニューから抑制方法を選ぶだけです。
+
+　慣れてきたらFirefoxの拡張機能YTBlockerアイコンを押してみてください、タブに設定画面が現れます。このGUIからも文字列指定で非表示対象を登録できます。
