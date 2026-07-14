@@ -72,8 +72,7 @@ export function getChannelName(card: Element): string {
 
 /**
  * ルール登録・ログ保存・カード除去・トースト表示までを一括で行う。
- * card-buttons(カード上のボタン)と menu-injector(三点メニュー)の
- * 両方から呼ばれる共通処理。
+ * menu-injector(三点メニュー)から呼ばれる。
  */
 export async function blockAndLog(
   card: Element,
