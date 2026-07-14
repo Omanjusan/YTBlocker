@@ -7,6 +7,7 @@ let pendingCard: Element | null = null;
 let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 let menuObserver: MutationObserver | null = null;
 
+/** 三点メニュー監視の途中状態(監視中のカード・MutationObserver・タイムアウト)を全て破棄する。 */
 function reset(): void {
   if (cleanupTimer !== null) clearTimeout(cleanupTimer);
   menuObserver?.disconnect();
@@ -15,6 +16,7 @@ function reset(): void {
   cleanupTimer = null;
 }
 
+/** YouTubeの三点メニュー(tp-yt-paper-listbox)に挿入する項目1個分のDOM要素を生成する。 */
 function createMenuItem(label: string, onClick: () => void): HTMLElement {
   const el = document.createElement('div');
   el.className = 'ytblocker-item';
@@ -50,6 +52,7 @@ function createMenuItem(label: string, onClick: () => void): HTMLElement {
   return el;
 }
 
+/** 開いた三点メニューの listbox に区切り線とブロック用の項目を追加する。既に追加済みなら何もしない。 */
 function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
   if (listbox.querySelector('.ytblocker-item')) return;
 
@@ -79,6 +82,7 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
   }
 }
 
+/** YouTube側が開いた三点メニューの listbox 要素を探す。DOM構造の版差に応じて複数セレクタを試す。 */
 function findMenuListbox(): Element | null {
   return (
     document.querySelector('ytd-menu-popup-renderer tp-yt-paper-listbox') ||
@@ -88,6 +92,12 @@ function findMenuListbox(): Element | null {
   );
 }
 
+/**
+ * カード内の三点メニューボタンのクリックを document 全体で捕捉し、
+ * メニューが開いたタイミングで動的にブロック用の項目を注入する。
+ * メニューは動的に生成されるため、クリック後に MutationObserver で
+ * listbox の出現を待ち、2秒以内に見つからなければ諦めてリセットする。
+ */
 export function setupMenuInjector(onAdded: OnAdded): void {
   debugLog('setupMenuInjector: registered');
 

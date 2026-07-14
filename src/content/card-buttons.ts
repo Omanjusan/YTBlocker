@@ -5,6 +5,7 @@ type OnAdded = () => void;
 
 const INJECTED_ATTR = 'data-ytb';
 
+/** カード内に差し込むブロックボタン1個分のDOM要素を生成する。 */
 function makeBtn(label: string, color: string, onClick: (e: MouseEvent) => void): HTMLButtonElement {
   const btn = document.createElement('button');
   btn.textContent = label;
@@ -27,6 +28,10 @@ function makeBtn(label: string, color: string, onClick: (e: MouseEvent) => void)
   return btn;
 }
 
+/**
+ * 1枚の動画カードに「🚫 動画」「🚫 CH」ボタンを差し込む。
+ * INJECTED_ATTR が既についていれば二重挿入を避けてスキップする。
+ */
 export function injectCardButtons(card: Element, onAdded: OnAdded): void {
   if (card.hasAttribute(INJECTED_ATTR)) return;
 
@@ -65,6 +70,7 @@ export function injectCardButtons(card: Element, onAdded: OnAdded): void {
   card.prepend(row);
 }
 
+/** 現在DOM上にある全カードを走査し、それぞれにブロックボタンを差し込む。 */
 export function injectAllCardButtons(onAdded: OnAdded): void {
   const cards = document.querySelectorAll<Element>(CARD_SELECTOR);
   debugLog('injectAll: cards found =', cards.length);

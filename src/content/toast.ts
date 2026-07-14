@@ -2,10 +2,15 @@ import { removeEntry } from '../shared/storage';
 
 const DURATION_MS = 5000;
 
+/** 文字列を max 文字で切り詰め、省略した場合は末尾に「…」を付ける。 */
 function truncate(text: string, max = 10): string {
   return text.length <= max ? text : text.slice(0, max) + '…';
 }
 
+/**
+ * ブロック登録直後に画面右下へ通知トーストを表示する。
+ * 「元に戻す」ボタンで直前の登録を取り消せる。DURATION_MS 経過で自動的に消える。
+ */
 export function showToast(label: string, entryId: string): void {
   const toast = document.createElement('div');
   toast.style.cssText = [
@@ -50,6 +55,7 @@ export function showToast(label: string, entryId: string): void {
   revertBtn.addEventListener('mouseleave', () => { revertBtn.style.background = '#555'; });
 
   let dismissed = false;
+  /** トーストをフェードアウトさせつつ削除する。二重実行を防ぐガード付き。 */
   function dismiss() {
     if (dismissed) return;
     dismissed = true;

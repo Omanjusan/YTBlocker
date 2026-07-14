@@ -13,7 +13,11 @@ export const CARD_SELECTOR = [
   'ytm-shorts-lockup-view-model-v2',  // 検索結果ページ用 ← これが抜けてた
 ].join(', ');
 
-// Shadow DOM を再帰的に貫通して querySelector する
+/**
+ * Shadow DOM を再帰的に貫通して querySelector する。
+ * YouTube の新UI(yt-lockup-view-model 等)はタイトル/チャンネル名が
+ * shadow root の中に入っていることがあるため、通常の querySelector だけでは届かない。
+ */
 function deepQuery(root: Element | ShadowRoot, selector: string): Element | null {
   const hit = (root as Element).querySelector?.(selector);
   if (hit) return hit;
@@ -26,6 +30,11 @@ function deepQuery(root: Element | ShadowRoot, selector: string): Element | null
   return null;
 }
 
+/**
+ * 動画カード要素からタイトルを取得する。
+ * YouTube側のDOM構造が新旧複数存在するため、上から順に候補セレクタを試し
+ * 最初にヒットしたテキストを採用するフォールバック方式にしている。
+ */
 export function getVideoTitle(card: Element): string {
   const candidates = [
     'h3 a#video-title',            // 旧構造
@@ -43,6 +52,7 @@ export function getVideoTitle(card: Element): string {
   return '';
 }
 
+/** 動画カード要素からチャンネル名を取得する。getVideoTitle と同様に複数構造をフォールバックで試す。 */
 export function getChannelName(card: Element): string {
   const candidates = [
     'ytd-channel-name a',
@@ -60,6 +70,11 @@ export function getChannelName(card: Element): string {
   return '';
 }
 
+/**
+ * ルール登録・ログ保存・カード除去・トースト表示までを一括で行う。
+ * card-buttons(カード上のボタン)と menu-injector(三点メニュー)の
+ * 両方から呼ばれる共通処理。
+ */
 export async function blockAndLog(
   card: Element,
   target: 'video' | 'channel',
@@ -76,11 +91,17 @@ export async function blockAndLog(
   showToast(value, id);
 }
 
+/** カード要素がショート動画かどうかを判定する。 */
 export function isShorts(card: Element): boolean {
   if (card.tagName === 'YTD-REEL-ITEM-RENDERER') return true;
   return !!card.querySelector('a[href*="/shorts/"]');
 }
 
+/**
+ * value が entry にマッチするか判定する。
+ * regex の場合、value が `/pattern/flags` 形式ならパターン+フラグとして、
+ * そうでなければ文字列全体を正規表現として解釈する。不正な正規表現は false 扱い。
+ */
 function entryMatches(value: string, entry: BlockEntry): boolean {
   if (!value) return false;
   if (entry.matchType === 'exact') return value === entry.value;
@@ -92,6 +113,11 @@ function entryMatches(value: string, entry: BlockEntry): boolean {
   }
 }
 
+/**
+ * 現在DOM上にある全カードにブロックルールを適用し、マッチしたものを削除する。
+ * ショート一括ブロックが有効な場合はルールに関わらずショートを先に除去する。
+ * @returns 実際にブロックされた項目のログ配列(呼び出し側で storage に保存する)。
+ */
 export function applyBlockList(entries: BlockEntry[], blockShorts: boolean): BlockLog[] {
   const logged: BlockLog[] = [];
 

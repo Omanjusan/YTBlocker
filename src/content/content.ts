@@ -8,15 +8,18 @@ let blockEntries: BlockEntry[] = [];
 let blockShorts = false;
 let debounceDelay = DEFAULT_DEBOUNCE_DELAY;
 
+/** 現在のブロックルールをDOMに適用し、ブロックが発生していればログを保存する。 */
 function applyAndLog(): void {
   const logs = applyBlockList(blockEntries, blockShorts);
   if (logs.length > 0) addLogs(logs).catch(() => {});
 }
 
+/** カードへのブロックボタン注入をやり直す。ボタン押下時は refresh() 経由で再適用する。 */
 function injectButtons(): void {
   injectAllCardButtons(async () => { await refresh(); });
 }
 
+/** storage からルール/設定を読み直し、ブロック適用とボタン注入をやり直す。 */
 async function refresh(): Promise<void> {
   [blockEntries, blockShorts] = await Promise.all([getEntries(), getBlockShortsEnabled()]);
   applyAndLog();
@@ -36,6 +39,9 @@ async function refresh(): Promise<void> {
     await refresh();
   });
 
+  // YouTubeはSPAでカード一覧を頻繁に部分差し替えするため、DOM変化を監視して
+  // 追加されたノードに動画カードが含まれる場合だけ再適用する(無関係なDOM変化での
+  // 無駄な再描画を避ける)。連続発火はデバウンスしてまとめて処理する。
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   const domObserver = new MutationObserver((mutations) => {
     const hasRelevantChange = mutations.some(m =>

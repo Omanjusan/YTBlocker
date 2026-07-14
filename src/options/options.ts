@@ -42,6 +42,7 @@ debounceInput.addEventListener('change', () => {
 
 // ---- リアルタイムマッチ判定 ----
 
+/** サンプル入力欄がパターン欄の正規表現にマッチするかをリアルタイムで判定し、⭕/❌ で表示する。 */
 function updateMatchIndicator(): void {
   const pattern = regexInput.value;
   const sample  = sampleInput.value;
@@ -62,6 +63,7 @@ sampleInput.addEventListener('input', updateMatchIndicator);
 
 // ---- 登録 ----
 
+/** 正規表現入力欄の内容を matchType: 'regex' のブロックルールとして登録する。 */
 async function handleAdd(target: MatchTarget): Promise<void> {
   const raw = regexInput.value.trim();
   if (!raw) return;
@@ -99,6 +101,7 @@ function targetBadgeClass(entry: BlockEntry): string {
   return 'badge-both';
 }
 
+/** 登録済みブロックルール一覧を新しい順に描画する。 */
 async function renderList(): Promise<void> {
   const entries = await getEntries();
   entryList.innerHTML = '';
@@ -141,6 +144,7 @@ async function renderList(): Promise<void> {
 
 // ---- ブロックログ描画 ----
 
+/** UNIXミリ秒のタイムスタンプを "MM/DD HH:mm:ss" 形式の日本語ロケール文字列に変換する。 */
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleString('ja-JP', {
     month: '2-digit', day: '2-digit',
@@ -148,6 +152,7 @@ function formatTime(ts: number): string {
   });
 }
 
+/** ブロック履歴ログを新しい順に描画する。 */
 async function renderLog(): Promise<void> {
   const logs = await getLogs();
   logList.innerHTML = '';
