@@ -1,7 +1,7 @@
 import {
   addEntry, clearLogs, estimateEntryBytes, generateId, getBlockShortsEnabled,
-  getEntries, getLogs, getScoutModeEnabled, getUsageBytes, itemByteSize, MAX_ENTRY_BYTES,
-  removeEntry, setBlockShortsEnabled, setScoutModeEnabled, STORAGE_KEYS, SYNC_TOTAL_BUDGET, updateEntry,
+  getEntries, getLogs, getScoutModeEnabled, getUsageBytes, isActiveArea, isSyncEnabled, itemByteSize, MAX_ENTRY_BYTES,
+  removeEntry, setBlockShortsEnabled, setScoutModeEnabled, STORAGE_KEYS, switchSyncArea, SYNC_TOTAL_BUDGET, updateEntry,
 } from '../shared/storage';
 import { applyStaticI18n, getLanguage, LANGS, setLanguage, t, toIntlLocale, type Lang } from '../shared/i18n';
 import type { BlockEntry, MatchTarget } from '../shared/types';
@@ -11,6 +11,7 @@ const langSelect      = document.getElementById('lang-select')      as HTMLSelec
 const usageBadge      = document.getElementById('usage-badge')      as HTMLSpanElement;
 const shortsCheckbox  = document.getElementById('shorts-checkbox')  as HTMLInputElement;
 const scoutCheckbox   = document.getElementById('scout-checkbox')   as HTMLInputElement;
+const syncLocalCheckbox = document.getElementById('sync-local-checkbox') as HTMLInputElement;
 const formCard        = document.getElementById('form-card')        as HTMLElement;
 const sampleInput     = document.getElementById('sample-input')     as HTMLInputElement;
 const regexInput      = document.getElementById('regex-input')      as HTMLInputElement;
@@ -101,6 +102,25 @@ getScoutModeEnabled().then((enabled) => {
 
 scoutCheckbox.addEventListener('change', () => {
   setScoutModeEnabled(scoutCheckbox.checked);
+});
+
+// ---- 同期無効化(ローカル保存)設定 ----
+// チェックボックスは「保存しない」＝ローカル保存 なので isSyncEnabled とは真偽が逆になる。
+
+isSyncEnabled().then((enabled) => {
+  syncLocalCheckbox.checked = !enabled;
+});
+
+syncLocalCheckbox.addEventListener('change', async () => {
+  syncLocalCheckbox.disabled = true;
+  try {
+    await switchSyncArea(!syncLocalCheckbox.checked);
+    usedBytes = await getUsageBytes();
+    renderUsage();
+    await renderList();
+  } finally {
+    syncLocalCheckbox.disabled = false;
+  }
 });
 
 // ---- リアルタイムマッチ判定 ----
@@ -333,10 +353,10 @@ btnClearLog.addEventListener('click', async () => {
 
 // ---- ストレージ変更をリアルタイム反映 ----
 
-browser.storage.onChanged.addListener((changes, area) => {
+browser.storage.onChanged.addListener(async (changes, area) => {
   if (area === 'local' && changes[STORAGE_KEYS.log]) renderLog();
 
-  if (area === 'sync') {
+  if (await isActiveArea(area)) {
     // 全チャンクを読み直さず、変化したキーごとの差分バイト数だけキャッシュへ反映する
     for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
       const oldSize = oldValue === undefined ? 0 : itemByteSize(key, oldValue);

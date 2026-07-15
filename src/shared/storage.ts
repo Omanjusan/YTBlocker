@@ -31,6 +31,55 @@ interface Settings {
 
 const DEFAULT_SETTINGS: Settings = { blockShorts: false, scoutMode: false };
 
+/** 同期無効化フラグ。sync/localどちらを見るかの判定材料になるため、常にlocalに置く。 */
+const SYNC_ENABLED_KEY = 'ytblocker_sync_enabled';
+
+/** ルール/設定の同期(storage.sync使用)が有効かどうか。デフォルトは有効。 */
+export async function isSyncEnabled(): Promise<boolean> {
+  const result = await browser.storage.local.get(SYNC_ENABLED_KEY);
+  return (result[SYNC_ENABLED_KEY] as boolean | undefined) ?? true;
+}
+
+export async function setSyncEnabled(enabled: boolean): Promise<void> {
+  await browser.storage.local.set({ [SYNC_ENABLED_KEY]: enabled });
+}
+
+/** 現在使うstorage area。isSyncEnabled()の値に応じてsync/localを切替。 */
+async function getArea(): Promise<browser.storage.StorageArea> {
+  return (await isSyncEnabled()) ? browser.storage.sync : browser.storage.local;
+}
+
+/** onChangedのareaNameが、現在アクティブなarea(getAreaと同じ判定)と一致するか。 */
+export async function isActiveArea(areaName: string): Promise<boolean> {
+  return areaName === ((await isSyncEnabled()) ? 'sync' : 'local');
+}
+
+/**
+ * 同期の有効/無効を切り替える。切替前に、ルール/設定を現在のareaから新しいareaへコピーしたうえで
+ * 元areaから削除する(往復してもデータが消えないように)。コピー成功後にフラグを更新するため、
+ * 途中でコピーが失敗した場合は元areaにデータが残ったまま(フラグも未変更)になる。
+ */
+export async function switchSyncArea(enabled: boolean): Promise<void> {
+  const current = await isSyncEnabled();
+  if (current === enabled) return;
+
+  const from = current ? browser.storage.sync : browser.storage.local;
+  const to = enabled ? browser.storage.sync : browser.storage.local;
+
+  const all = await from.get(null);
+  const migratedKeys = Object.keys(all).filter(
+    (k) => k.startsWith(STORAGE_KEYS.rulesPrefix) || k === STORAGE_KEYS.settings,
+  );
+
+  if (migratedKeys.length > 0) {
+    const payload = Object.fromEntries(migratedKeys.map((k) => [k, all[k]]));
+    await to.set(payload);
+    await from.remove(migratedKeys);
+  }
+
+  await setSyncEnabled(enabled);
+}
+
 const encoder = new TextEncoder();
 
 /** JSONシリアライズ後のUTF-8実バイト数を計算する(日本語は1文字3byteになるため文字数では判定できない)。 */
@@ -75,7 +124,7 @@ export function itemByteSize(key: string, value: unknown): number {
 
 /** storage.sync 全体(全キー)の現在の使用バイト数を実測する。起動時の初期化用(以降は onChanged の差分で追う想定)。 */
 export async function getUsageBytes(): Promise<number> {
-  const all = await browser.storage.sync.get(null);
+  const all = await (await getArea()).get(null);
   return Object.entries(all).reduce((sum, [key, value]) => sum + itemByteSize(key, value), 0);
 }
 
@@ -91,7 +140,7 @@ interface Chunk {
 
 /** 全ルールチャンクをキー番号順に取得する。 */
 async function getAllChunks(): Promise<Chunk[]> {
-  const all = await browser.storage.sync.get(null);
+  const all = await (await getArea()).get(null);
   return Object.keys(all)
     .filter((k) => k.startsWith(STORAGE_KEYS.rulesPrefix))
     .map((key) => ({
@@ -120,7 +169,7 @@ export async function addEntry(entry: BlockEntry): Promise<void> {
   for (const chunk of chunks) {
     const next = [...chunk.entries, stored];
     if (byteLength(next) <= CHUNK_BYTE_LIMIT) {
-      await browser.storage.sync.set({ [chunk.key]: next });
+      await (await getArea()).set({ [chunk.key]: next });
       return;
     }
   }
@@ -130,7 +179,7 @@ export async function addEntry(entry: BlockEntry): Promise<void> {
   }
 
   const nextIndex = chunks.length === 0 ? 0 : chunks[chunks.length - 1].index + 1;
-  await browser.storage.sync.set({ [chunkKey(nextIndex)]: [stored] });
+  await (await getArea()).set({ [chunkKey(nextIndex)]: [stored] });
 }
 
 /** 指定IDのブロックルールを削除する(トーストの「元に戻す」から呼ばれる)。空になったチャンクはキーごと削除する。 */
@@ -142,9 +191,9 @@ export async function removeEntry(id: string): Promise<void> {
     if (next.length === chunk.entries.length) continue;
 
     if (next.length === 0) {
-      await browser.storage.sync.remove(chunk.key);
+      await (await getArea()).remove(chunk.key);
     } else {
-      await browser.storage.sync.set({ [chunk.key]: next });
+      await (await getArea()).set({ [chunk.key]: next });
     }
     return;
   }
@@ -166,15 +215,15 @@ export async function updateEntry(id: string, patch: Partial<Pick<BlockEntry, 't
     const replaced = chunk.entries.map((e, i) => (i === idx ? toStored(patched) : e));
 
     if (byteLength(replaced) <= CHUNK_BYTE_LIMIT) {
-      await browser.storage.sync.set({ [chunk.key]: replaced });
+      await (await getArea()).set({ [chunk.key]: replaced });
       return;
     }
 
     const withoutEntry = chunk.entries.filter((_, i) => i !== idx);
     if (withoutEntry.length === 0) {
-      await browser.storage.sync.remove(chunk.key);
+      await (await getArea()).remove(chunk.key);
     } else {
-      await browser.storage.sync.set({ [chunk.key]: withoutEntry });
+      await (await getArea()).set({ [chunk.key]: withoutEntry });
     }
     await addEntry(patched);
     return;
@@ -201,13 +250,13 @@ export async function clearLogs(): Promise<void> {
 }
 
 async function getSettings(): Promise<Settings> {
-  const result = await browser.storage.sync.get(STORAGE_KEYS.settings);
+  const result = await (await getArea()).get(STORAGE_KEYS.settings);
   return { ...DEFAULT_SETTINGS, ...(result[STORAGE_KEYS.settings] as Partial<Settings> | undefined) };
 }
 
 async function setSettings(patch: Partial<Settings>): Promise<void> {
   const current = await getSettings();
-  await browser.storage.sync.set({ [STORAGE_KEYS.settings]: { ...current, ...patch } });
+  await (await getArea()).set({ [STORAGE_KEYS.settings]: { ...current, ...patch } });
 }
 
 /** ショート動画を一括ブロックする設定が有効かどうかを取得する。 */

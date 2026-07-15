@@ -142,13 +142,7 @@
       cursor: pointer;
       user-select: none;
     }
-    .opt-row input[type="checkbox"]:disabled ~ label.opt-label,
-    .opt-row label.opt-label.is-disabled { color: #aaa; cursor: not-allowed; }
-    .opt-note {
-      font-size: 11px;
-      color: #888;
-      margin-left: 4px;
-    }
+    .opt-row input[type="checkbox"]:disabled ~ label.opt-label { color: #aaa; cursor: not-allowed; }
     .opt-row.lang-row select {
       padding: 6px 10px;
       border: 1px solid #ccc;
@@ -373,9 +367,8 @@
       </div>
 
       <div class="opt-row">
-        <input type="checkbox" id="sync-local-checkbox" disabled />
-        <label class="opt-label is-disabled" for="sync-local-checkbox" data-i18n="sync.disable.label">FIREFOXアカウントに保存しない（ローカル保存）</label>
-        <span class="opt-note" data-i18n="sync.disable.note">（未実装。今後対応予定）</span>
+        <input type="checkbox" id="sync-local-checkbox" />
+        <label class="opt-label" for="sync-local-checkbox" data-i18n="sync.disable.label">FIREFOXアカウントに保存しない（ローカル保存）</label>
       </div>
     </section>
 
