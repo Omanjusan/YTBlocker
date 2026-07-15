@@ -1,0 +1,4 @@
+{
+  "extName": { "message": "YTBlocker", "description": "Erweiterungsname" },
+  "extDescription": { "message": "Blendet YouTube-Videos und -Kanäle anhand deiner registrierten Sperrregeln aus.", "description": "Beschreibung in about:addons" }
+}

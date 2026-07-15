@@ -1,0 +1,4 @@
+{
+  "extName": { "message": "YTBlocker", "description": "Extension name" },
+  "extDescription": { "message": "Hides YouTube videos and channels based on your registered block rules.", "description": "Description shown in about:addons" }
+}

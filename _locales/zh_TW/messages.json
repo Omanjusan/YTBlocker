@@ -1,0 +1,4 @@
+{
+  "extName": { "message": "YTBlocker", "description": "擴充功能名稱" },
+  "extDescription": { "message": "根據已註冊的封鎖規則隱藏 YouTube 影片和頻道。", "description": "在 about:addons 中顯示的說明" }
+}
