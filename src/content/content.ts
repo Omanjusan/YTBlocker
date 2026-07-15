@@ -1,4 +1,4 @@
-import { addLogs, getBlockShortsEnabled, getEntries, getScoutModeEnabled, STORAGE_KEYS } from '../shared/storage';
+import { addLogs, getBlockShortsEnabled, getEntries, getScoutModeEnabled, isActiveArea, STORAGE_KEYS } from '../shared/storage';
 import { applyBlockList, CARD_SELECTOR, isInsideAdContainer } from './blocker';
 import { scoutScan } from './card-scout';
 import { setupMenuInjector } from './menu-injector';
@@ -34,7 +34,7 @@ async function refresh(): Promise<void> {
   setupMenuInjector(async () => { await refresh(); });
 
   browser.storage.onChanged.addListener(async (changes, area) => {
-    if (area !== 'sync') return;
+    if (!(await isActiveArea(area))) return;
 
     if (changes[STORAGE_KEYS.settings]) {
       const newSettings = changes[STORAGE_KEYS.settings].newValue as { scoutMode?: boolean } | undefined;

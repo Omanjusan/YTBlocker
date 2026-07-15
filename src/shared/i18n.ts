@@ -49,10 +49,6 @@ const messages: Record<string, Dict> = {
     'zh-CN': '不保存到 FIREFOX 账户（仅本地保存）',
     'zh-TW': '不保存到 FIREFOX 帳戶（僅本機保存）',
   },
-  'sync.disable.note': {
-    ja: '（未実装。今後対応予定）', en: '(Not implemented yet)', de: '(Noch nicht implementiert)', it: '(Non ancora implementato)',
-    fr: '(Pas encore disponible)', ko: '(미구현. 추후 지원 예정)', 'zh-CN': '（尚未实现，敬请期待）', 'zh-TW': '（尚未實作，敬請期待）',
-  },
   'shorts.label': {
     ja: 'ショート動画をすべて非表示にする', en: 'Hide all Shorts', de: 'Alle Shorts ausblenden', it: 'Nascondi tutti gli Shorts',
     fr: 'Masquer tous les Shorts', ko: '모든 쇼츠 동영상 숨기기', 'zh-CN': '隐藏所有 Shorts 短视频', 'zh-TW': '隱藏所有 Shorts 短影片',
