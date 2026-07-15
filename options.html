@@ -77,8 +77,11 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 16px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
     .card-head h2 { margin-bottom: 0; }
+    .card-head-right { display: flex; align-items: center; gap: 10px; }
     .edit-tag {
       display: none;
       align-items: center;
@@ -100,7 +103,6 @@
       gap: 8px;
       font-size: 12px;
       color: #606060;
-      margin-bottom: 14px;
     }
     .usage-badge {
       display: inline-block;
@@ -116,26 +118,46 @@
       .usage-badge.usage-full { background: #6b1f24; }
     }
 
-    /* ショート動画チェックボックス */
-    .shorts-row {
+    /* オプション設定カード内の各行 */
+    .opt-row {
       display: flex;
       align-items: center;
       gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid #eee;
     }
-    .shorts-row[hidden] {
-      display: none !important;
-    }
-    .shorts-row input[type="checkbox"] {
+    .opt-row:first-of-type { border-top: none; padding-top: 4px; }
+    .opt-row[hidden] { display: none !important; }
+    .opt-row input[type="checkbox"] {
       width: 16px;
       height: 16px;
       cursor: pointer;
       accent-color: #c00;
+      flex-shrink: 0;
     }
-    .shorts-row label {
+    .opt-row input[type="checkbox"]:disabled { cursor: not-allowed; accent-color: #aaa; }
+    .opt-row label.opt-label {
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       user-select: none;
+    }
+    .opt-row input[type="checkbox"]:disabled ~ label.opt-label,
+    .opt-row label.opt-label.is-disabled { color: #aaa; cursor: not-allowed; }
+    .opt-note {
+      font-size: 11px;
+      color: #888;
+      margin-left: 4px;
+    }
+    .opt-row.lang-row select {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+      background: #fff;
+      color: #0f0f0f;
+      cursor: pointer;
+      min-width: 180px;
     }
 
     /* フォーム行 */
@@ -159,12 +181,12 @@
       gap: 8px;
     }
     .regex-row input { flex: 1; }
-    #match-indicator {
-      font-size: 20px;
-      width: 28px;
-      text-align: center;
-      flex-shrink: 0;
-      line-height: 1;
+    #match-indicator { font-weight: 700; }
+    #match-indicator.match-ok { color: #107516; }
+    #match-indicator.match-ng { color: #c00; }
+    @media (prefers-color-scheme: dark) {
+      #match-indicator.match-ok { color: #4caf50; }
+      #match-indicator.match-ng { color: #ff6b6b; }
     }
 
     /* 簡易マニュアル */
@@ -325,101 +347,119 @@
     <span class="title-group">
       <span>YTBlocker</span>
       <span class="version" id="version-label"></span>
-      <span>設定</span>
+      <span data-i18n="header.settings">設定</span>
     </span>
     <a class="repo-link" href="https://github.com/Omanjusan/YTBlocker" target="_blank" rel="noopener">github.com/Omanjusan/YTBlocker</a>
   </header>
 
   <main>
-    <!-- ショート動画設定 -->
+    <!-- オプション設定 -->
     <section class="card">
-      <div class="usage-row">
-        <span>NG登録容量:</span>
-        <span class="usage-badge" id="usage-badge">0%</span>
+      <h2 data-i18n="options.title">オプション設定</h2>
+
+      <div class="opt-row lang-row">
+        <label class="opt-label" for="lang-select" data-i18n="lang.label">言語設定：</label>
+        <select id="lang-select"></select>
       </div>
-      <div class="shorts-row">
+
+      <div class="opt-row">
         <input type="checkbox" id="shorts-checkbox" />
-        <label for="shorts-checkbox">ショート動画をすべて非表示にする</label>
+        <label class="opt-label" for="shorts-checkbox" data-i18n="shorts.label">ショート動画をすべて非表示にする</label>
       </div>
-      <div class="shorts-row" hidden>
+
+      <div class="opt-row" hidden>
         <input type="checkbox" id="scout-checkbox" />
-        <label for="scout-checkbox">観測モード（未対応カードをコンソールに報告。通常はOFF）</label>
+        <label class="opt-label" for="scout-checkbox" data-i18n="scout.label">観測モード（未対応カードをコンソールに報告。通常はOFF）</label>
+      </div>
+
+      <div class="opt-row">
+        <input type="checkbox" id="sync-local-checkbox" disabled />
+        <label class="opt-label is-disabled" for="sync-local-checkbox" data-i18n="sync.disable.label">FIREFOXアカウントに保存しない（ローカル保存）</label>
+        <span class="opt-note" data-i18n="sync.disable.note">（未実装。今後対応予定）</span>
       </div>
     </section>
 
     <!-- 正規表現ルール追加カード -->
     <section class="card" id="form-card">
       <div class="card-head">
-        <h2>ブロックルールを追加（正規表現）</h2>
-        <span class="edit-tag">✎ 編集中</span>
+        <h2 data-i18n="form.title">ブロックルールを追加（正規表現）</h2>
+        <div class="card-head-right">
+          <span class="edit-tag" data-i18n="form.editTag">✎ 編集中</span>
+          <span class="usage-row">
+            <span data-i18n="usage.label">NG登録容量:</span>
+            <span class="usage-badge" id="usage-badge">0%</span>
+          </span>
+        </div>
       </div>
 
       <div class="field">
-        <label for="sample-input">サンプル文字列（動画タイトルまたはチャンネル名）　例 test ch</label>
+        <label for="sample-input" data-i18n="form.sampleLabel">サンプル文字列（動画タイトルまたはチャンネル名）　例 test ch</label>
         <input id="sample-input" type="text" />
       </div>
 
       <div class="field">
-        <label for="regex-input">正規表現パターン　例 aaaa | bbbb</label>
-        <p class="field-note">サンプル文字列との判定で末尾の❌⭕が変わります。サンプル文字列にHITするなら⭕が表示されます。サンプル文字列が空なら常に❌表示</p>
+        <label for="regex-input" data-i18n="form.regexLabel">正規表現パターン　例 aaaa | bbbb</label>
+        <p class="field-note" data-i18n="form.matchNote">サンプル文字列との判定結果は下の行頭に表示されます。サンプル文字列が空なら常に「不適合」表示</p>
         <div class="regex-row">
           <input id="regex-input" type="text" />
-          <span id="match-indicator">❌</span>
         </div>
-        <p class="field-note" id="byte-budget"></p>
+        <p class="field-note" id="byte-budget">
+          <span data-i18n="match.compareLabel">サンプル文字列との比較：</span><span id="match-indicator" class="match-ng" data-i18n="match.ng">✗ 不適合</span>
+          <span>　／　</span><span id="budget-text"></span>
+        </p>
       </div>
 
       <fieldset class="target-group">
-        <legend>適用対象</legend>
+        <legend data-i18n="target.legend">適用対象</legend>
         <label class="target-option" data-target="video">
-          <input type="radio" name="target" value="video" checked />動画
+          <input type="radio" name="target" value="video" checked /><span data-i18n="target.video">動画</span>
         </label>
         <label class="target-option" data-target="channel">
-          <input type="radio" name="target" value="channel" />チャンネル
+          <input type="radio" name="target" value="channel" /><span data-i18n="target.channel">チャンネル</span>
         </label>
         <label class="target-option" data-target="both">
-          <input type="radio" name="target" value="both" />両方
+          <input type="radio" name="target" value="both" /><span data-i18n="target.both">両方</span>
         </label>
       </fieldset>
 
       <div class="manual">
-        <code>^</code> 先頭 &nbsp;
-        <code>$</code> 末尾 &nbsp;
-        <code>.</code> 任意の1文字 &nbsp;
-        <code>*</code> 0回以上 &nbsp;
-        <code>+</code> 1回以上 &nbsp;
-        <code>?</code> 0または1回<br>
-        <code>[abc]</code> a・b・cのいずれか &nbsp;
-        <code>[^abc]</code> a・b・c以外 &nbsp;
-        <code>(a|b)</code> aまたはb<br>
-        <code>\d</code> 数字 &nbsp;
-        <code>\w</code> 単語文字 &nbsp;
-        <code>\s</code> 空白 &nbsp;
-        <code>i</code>フラグ（末尾に <code>/i</code>）: 大文字小文字を無視
+        <code>^</code> <span data-i18n="manual.start">先頭</span> &nbsp;
+        <code>$</code> <span data-i18n="manual.end">末尾</span> &nbsp;
+        <code>.</code> <span data-i18n="manual.anyChar">任意の1文字</span> &nbsp;
+        <code>*</code> <span data-i18n="manual.zeroOrMore">0回以上</span> &nbsp;
+        <code>+</code> <span data-i18n="manual.oneOrMore">1回以上</span> &nbsp;
+        <code>?</code> <span data-i18n="manual.zeroOrOne">0または1回</span><br>
+        <code>[abc]</code> <span data-i18n="manual.anyOf">a・b・cのいずれか</span> &nbsp;
+        <code>[^abc]</code> <span data-i18n="manual.noneOf">a・b・c以外</span> &nbsp;
+        <code>(a|b)</code> <span data-i18n="manual.or">aまたはb</span><br>
+        <code>\d</code> <span data-i18n="manual.digit">数字</span> &nbsp;
+        <code>\w</code> <span data-i18n="manual.word">単語文字</span> &nbsp;
+        <code>\s</code> <span data-i18n="manual.space">空白</span> &nbsp;
+        <code>i</code><span data-i18n="manual.iFlag">フラグ（末尾に /i）: 大文字小文字を無視</span>
       </div>
 
       <div class="btn-group">
-        <button class="btn btn-submit" id="btn-submit">登録</button>
-        <button class="btn btn-cancel" id="btn-cancel">編集をキャンセル</button>
+        <button class="btn btn-submit" id="btn-submit" data-i18n="btn.submit">登録</button>
+        <button class="btn btn-cancel" id="btn-cancel" data-i18n="btn.cancelEdit">編集をキャンセル</button>
       </div>
     </section>
 
     <!-- 登録済みルールカード -->
     <section class="card">
-      <h2>登録済みルール</h2>
+      <h2 data-i18n="rules.title">登録済みルール</h2>
       <div id="entry-list">
-        <p class="empty-msg">ルールがありません</p>
+        <p class="empty-msg" data-i18n="rules.empty">ルールがありません</p>
       </div>
     </section>
 
     <!-- ブロックログ -->
     <section class="card">
       <div class="log-header">
-        <h2>ブロックログ（直近50件）</h2>
-        <button class="btn-clear-log" id="btn-clear-log">ログをクリア</button>
+        <h2 data-i18n="log.title">ブロックログ（直近50件）</h2>
+        <button class="btn-clear-log" id="btn-clear-log" data-i18n="btn.clearLog">ログをクリア</button>
       </div>
       <div id="log-list">
-        <p class="empty-msg">ログはありません</p>
+        <p class="empty-msg" data-i18n="log.empty">ログはありません</p>
       </div>
     </section>
   </main>
