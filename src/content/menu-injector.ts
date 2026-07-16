@@ -5,16 +5,19 @@ type OnAdded = () => void;
 
 let pendingCard: Element | null = null;
 let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
 let menuObserver: MutationObserver | null = null;
 let injectAttempts = 0;
 
-/** 三点メニュー監視の途中状態(監視中のカード・MutationObserver・タイムアウト)を全て破棄する。 */
+/** 三点メニュー監視の途中状態(監視中のカード・MutationObserver・ポーリング・タイムアウト)を全て破棄する。 */
 function reset(): void {
   if (cleanupTimer !== null) clearTimeout(cleanupTimer);
+  if (pollTimer !== null) clearInterval(pollTimer);
   menuObserver?.disconnect();
   menuObserver = null;
   pendingCard = null;
   cleanupTimer = null;
+  pollTimer = null;
   injectAttempts = 0;
 }
 
@@ -64,6 +67,14 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
     return;
   }
 
+  // メニューDOMの使い回し・再構築でlistbox外に残った過去の注入分が
+  // 同じポップアップ内に見えてしまう(区切り線の二重表示等)ため、注入直前にも残骸を掃除する
+  const stale = document.querySelectorAll('.ytblocker-item');
+  if (stale.length > 0) {
+    debugLog('injectItems: removing', stale.length, 'stale item(s)');
+    stale.forEach((el) => el.remove());
+  }
+
   const title = getVideoTitle(card);
   const channel = getChannelName(card);
   debugLog('injectItems: title:', title || '(empty)', '| channel:', channel || '(empty)');
@@ -92,29 +103,63 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
       })
     );
   }
+
+  updateSepVisibility(listbox);
 }
 
 /**
- * 三点メニューの見切れ対策。appendChild直後は追加ノードのレイアウトが未確定のことがあり、
- * その状態で dropdown.refit() を呼んでも古いサイズのまま扱われることがある。
- * offsetHeight読み取りで強制的にリフローさせてから refit() を呼び、
- * 次フレームでももう一度実行する(1回目でまだ反映しきれないケースの保険)。
+ * 区切り線の二重表示を防ぐ。旧UIのネイティブ最終項目はdividerを内蔵している(has-separator属性)ことがあり、
+ * その直後にこちらのsepが並ぶと線が2本見える。sepの直前の可視要素がhas-separator持ちならsepを非表示にする。
+ * メニューDOM使い回し時はネイティブ項目が注入後に差し込まれることがあるため、
+ * 注入直後の一回だけでなく監視中のポーリングからも呼んで追従する。
  */
-function refitMenuDropdown(listbox: Element): void {
-  const el = listbox as HTMLElement;
-  const dropdown = el.closest('tp-yt-iron-dropdown') as (HTMLElement & { refit?: () => void }) | null;
+function updateSepVisibility(listbox: Element): void {
+  const sep = listbox.querySelector('.ytblocker-sep') as HTMLElement | null;
+  if (!sep) return;
+  let prev: Element | null = sep.previousElementSibling;
+  while (prev && (prev as HTMLElement).offsetHeight === 0) {
+    prev = prev.previousElementSibling;
+  }
+  const redundant = prev?.hasAttribute('has-separator') ?? false;
+  sep.style.display = redundant ? 'none' : '';
+}
 
-  const runRefit = () => {
-    void el.offsetHeight;
-    if (dropdown && typeof dropdown.refit === 'function') {
-      dropdown.refit();
-    } else {
-      window.dispatchEvent(new Event('resize'));
+/**
+ * 三点メニューの見切れ対策。
+ * 新UI(yt-list-view-model系シート型メニュー)では、メニューを開いた時点で測ったネイティブ項目分の高さが
+ * yt-sheet-view-model のインライン max-height に固定されるため、後から注入した項目が
+ * 配下の overflow:auto なDIVでクリップされて見切れる(実測でこの構造を確認済み)。
+ * そこで listbox の実コンテンツ高に合わせて max-height を自前で上書きして全項目を展開する。
+ * 上限は yt-contextual-sheet-layout 側の max-height(ビューポート由来)でクランプする。
+ * YouTube側の開閉アニメーション等が遅れて上書きしてくるため、即時・次フレーム・150ms後の3回適用する。
+ * 旧UI(tp-yt-paper-listbox系)はこの構造を持たないため、従来どおりresizeイベントで再計算を促す。
+ */
+function expandMenuSheet(listbox: Element): void {
+  const el = listbox as HTMLElement;
+  const sheet = el.closest('yt-sheet-view-model') as HTMLElement | null;
+
+  if (!sheet) {
+    // 旧UI: resizeイベントでYouTube側の位置・高さ再計算を促す
+    window.dispatchEvent(new Event('resize'));
+    return;
+  }
+
+  const layout = el.closest('yt-contextual-sheet-layout') as HTMLElement | null;
+
+  const apply = () => {
+    const needed = el.scrollHeight;
+    if (needed <= 0) return;
+    const cap = layout ? parseFloat(getComputedStyle(layout).maxHeight) : NaN;
+    const next = Number.isFinite(cap) ? Math.min(needed, cap) : needed;
+    if (parseFloat(sheet.style.maxHeight) !== next) {
+      sheet.style.maxHeight = `${next}px`;
+      debugLog('expandMenuSheet: sheet maxHeight ->', sheet.style.maxHeight);
     }
   };
 
-  runRefit();
-  requestAnimationFrame(runRefit);
+  apply();
+  requestAnimationFrame(apply);
+  setTimeout(apply, 150);
 }
 
 /** YouTube側が開いた三点メニューの listbox 要素を探す。DOM構造の版差に応じて複数セレクタを試す。 */
@@ -176,7 +221,7 @@ export function setupMenuInjector(onAdded: OnAdded): void {
       document.querySelectorAll('.ytblocker-item').forEach((el) => el.remove());
       pendingCard = card;
 
-      menuObserver = new MutationObserver(() => {
+      const tryInject = () => {
         if (!pendingCard) return;
         const listbox = findMenuListbox();
         if (!listbox) return;
@@ -187,26 +232,34 @@ export function setupMenuInjector(onAdded: OnAdded): void {
           'ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer, tp-yt-paper-item, yt-list-item-view-model'
         );
         if (!nativeItem) {
-          debugLog('menuObserver: listbox found but no native items yet, waiting');
+          debugLog('tryInject: listbox found but no native items yet, waiting');
           return;
         }
 
-        // 注入済みで生き残っていれば何もしない。消されていたら再注入(上限付き)
-        if (listbox.querySelector('.ytblocker-item')) return;
+        // 注入済みで生き残っていれば区切り線の重複チェックだけして終わり。消されていたら再注入(上限付き)
+        if (listbox.querySelector('.ytblocker-item')) {
+          updateSepVisibility(listbox);
+          return;
+        }
         if (injectAttempts >= 3) {
-          debugLog('menuObserver: inject attempts exhausted, giving up');
+          debugLog('tryInject: inject attempts exhausted, giving up');
           reset();
           return;
         }
         injectAttempts++;
-        debugLog('menuObserver: injecting (attempt', injectAttempts, ')');
+        debugLog('tryInject: injecting (attempt', injectAttempts, ')');
         injectItems(pendingCard, listbox, onAdded);
-        refitMenuDropdown(listbox);
+        expandMenuSheet(listbox);
         // 即resetせず監視を継続し、YouTube側に消された場合は次のmutationで再注入する。
         // 監視はcleanupTimerで終了する。
-      });
+      };
 
+      // メニューDOMが使い回される場合、再オープン時はノード追加が起きず
+      // display切替(style属性変更)だけで表示されるため、childList監視では検出できない。
+      // MutationObserverと並走して200ms間隔のポーリングでも同じ判定を回す(cleanupTimerで終了)。
+      menuObserver = new MutationObserver(tryInject);
       menuObserver.observe(document.body, { childList: true, subtree: true });
+      pollTimer = setInterval(tryInject, 200);
       debugLog('menuObserver: observing for card', card.tagName);
 
       cleanupTimer = setTimeout(() => {
