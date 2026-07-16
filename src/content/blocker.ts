@@ -1,4 +1,5 @@
 import { addEntry, addLogs, generateId } from '../shared/storage';
+import { debugLog } from '../shared/debug';
 import { showToast } from './toast';
 
 import type { BlockEntry, BlockLog } from '../shared/types';
@@ -96,6 +97,39 @@ export function getChannelName(card: Element): string {
   }
   return '';
 }
+
+// ---- ここから一時計測コード(チャンネル名抽出調査用、調査完了後に削除) ----
+
+/** shadow DOMも貫通して selector に一致する全要素を集める。 */
+function collectDeep(root: Element | ShadowRoot, selector: string, out: Element[]): void {
+  (root as Element).querySelectorAll?.(selector).forEach((el) => out.push(el));
+  for (const el of (root as Element).querySelectorAll?.('*') ?? []) {
+    if (el.shadowRoot) collectDeep(el.shadowRoot as unknown as Element, selector, out);
+  }
+}
+
+/** カード内のメタデータブロックのDOM構造とチャンネルリンク候補をログする。 */
+export function dumpCardMetadata(card: Element): void {
+  debugLog('[meta] card:', card.tagName);
+
+  const metas: Element[] = [];
+  collectDeep(card, 'yt-content-metadata-view-model', metas);
+  debugLog('[meta] metadata blocks:', metas.length);
+  metas.forEach((meta, mi) => {
+    Array.from(meta.children).forEach((row, ri) => {
+      debugLog(`[meta] block${mi} row${ri}:`, (row as HTMLElement).outerHTML.slice(0, 500));
+    });
+  });
+
+  const links: Element[] = [];
+  collectDeep(card, 'a[href*="/@"], a[href*="/channel/"]', links);
+  debugLog('[meta] channel-ish links:', links.length);
+  links.forEach((a, i) => {
+    debugLog(`[meta] link${i}:`, a.getAttribute('href'), '| text:', a.textContent?.trim().slice(0, 40) || '-');
+  });
+}
+
+// ---- 一時計測コードここまで ----
 
 /**
  * ルール登録・ログ保存・カード除去・トースト表示までを一括で行う。

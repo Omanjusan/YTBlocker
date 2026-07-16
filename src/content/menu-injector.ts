@@ -1,4 +1,4 @@
-import { blockAndLog, CARD_SELECTOR, getChannelName, getVideoTitle, isInsideAdContainer } from './blocker';
+import { blockAndLog, CARD_SELECTOR, dumpCardMetadata, getChannelName, getVideoTitle, isInsideAdContainer } from './blocker';
 import { debugLog } from '../shared/debug';
 
 type OnAdded = () => void;
@@ -78,6 +78,7 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
   const title = getVideoTitle(card);
   const channel = getChannelName(card);
   debugLog('injectItems: title:', title || '(empty)', '| channel:', channel || '(empty)');
+  dumpCardMetadata(card); // 一時計測(チャンネル名抽出調査用、調査完了後に削除)
   if (!title && !channel) {
     debugLog('injectItems: title/channel both empty, bail');
     return;
