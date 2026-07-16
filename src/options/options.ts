@@ -276,7 +276,10 @@ async function renderList(): Promise<void> {
   entryList.innerHTML = '';
 
   if (entries.length === 0) {
-    entryList.innerHTML = `<p class="empty-msg">${t('rules.empty', currentLang)}</p>`;
+    const emptyMsg = document.createElement('p');
+    emptyMsg.className = 'empty-msg';
+    emptyMsg.textContent = t('rules.empty', currentLang);
+    entryList.appendChild(emptyMsg);
     return;
   }
 
@@ -332,14 +335,20 @@ async function renderLog(): Promise<void> {
   logList.innerHTML = '';
 
   if (await isLogDisabled()) {
-    logList.innerHTML = `<p class="empty-msg">${t('log.disabledMsg', currentLang)}</p>`;
+    const disabledMsg = document.createElement('p');
+    disabledMsg.className = 'empty-msg';
+    disabledMsg.textContent = t('log.disabledMsg', currentLang);
+    logList.appendChild(disabledMsg);
     return;
   }
 
   const logs = await getLogs();
 
   if (logs.length === 0) {
-    logList.innerHTML = `<p class="empty-msg">${t('log.empty', currentLang)}</p>`;
+    const emptyMsg = document.createElement('p');
+    emptyMsg.className = 'empty-msg';
+    emptyMsg.textContent = t('log.empty', currentLang);
+    logList.appendChild(emptyMsg);
     return;
   }
 
