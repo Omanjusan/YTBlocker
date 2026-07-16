@@ -1,5 +1,4 @@
 import { addEntry, addLogs, generateId } from '../shared/storage';
-import { debugLog } from '../shared/debug';
 import { showToast } from './toast';
 
 import type { BlockEntry, BlockLog } from '../shared/types';
@@ -74,6 +73,25 @@ export function getVideoTitle(card: Element): string {
   return '';
 }
 
+/**
+ * yt-lockup-view-model のメタデータ行からプレーンテキストのチャンネル名を構造判定で取得する。
+ * チャンネル名行は「Delimiter(•)を含まない行」、再生数・日付行は「Delimiterを含む行」という
+ * 実測で確認した構造差を使う。チャンネル名行が省略されるカード(chページの自ch動画など)や
+ * メン限カード(「◯週間前 に配信済み」のみでDelimiterなし)では誤採用せず空文字を返す。
+ * クラス命名はYouTubeの版によってwiz形式(kebab-case)とcamelCase形式の両方が存在する。
+ */
+function getMetadataChannelText(card: Element): string {
+  const meta = deepQuery(card, 'yt-content-metadata-view-model');
+  if (!meta) return '';
+  const rowSel = '.yt-content-metadata-view-model-wiz__metadata-row, .ytContentMetadataViewModelMetadataRow';
+  const delimSel = '.yt-content-metadata-view-model-wiz__delimiter, .ytContentMetadataViewModelDelimiter';
+  const rows = Array.from(meta.querySelectorAll(rowSel));
+  if (rows.length < 2) return '';
+  if (rows[0].querySelector(delimSel)) return '';
+  if (!rows.slice(1).some((row) => row.querySelector(delimSel))) return '';
+  return rows[0].textContent?.trim() ?? '';
+}
+
 /** 動画カード要素からチャンネル名を取得する。getVideoTitle と同様に複数構造をフォールバックで試す。 */
 export function getChannelName(card: Element): string {
   const candidates = [
@@ -81,55 +99,28 @@ export function getChannelName(card: Element): string {
     '#channel-name a',
     'ytd-channel-name yt-formatted-string',
     '#channel-name yt-formatted-string',
-    'a[href*="/@"]',               // 新構造: @ハンドル形式
+    'a[href*="/@"]',               // 新構造: @ハンドル形式(新UIカードのch名リンクもここで拾える)
     'a[href*="/channel/"]',
     'a[href*="/c/"]',
-    // yt-lockup-view-model: チャンネル名がリンクではなくプレーンテキストで
-    // メタデータ行(1行目)に入っている。クラス命名はYouTubeの版によって
-    // wiz形式(kebab-case)とcamelCase形式の両方が存在する
-    '.yt-content-metadata-view-model-wiz__metadata-text',
-    '.ytContentMetadataViewModelMetadataText',
-    'yt-content-metadata-view-model span[role="text"]',
   ];
   for (const sel of candidates) {
     const text = deepQuery(card, sel)?.textContent?.trim();
     if (text) return text;
   }
-  return '';
+  return getMetadataChannelText(card);
 }
 
-// ---- ここから一時計測コード(チャンネル名抽出調査用、調査完了後に削除) ----
-
-/** shadow DOMも貫通して selector に一致する全要素を集める。 */
-function collectDeep(root: Element | ShadowRoot, selector: string, out: Element[]): void {
-  (root as Element).querySelectorAll?.(selector).forEach((el) => out.push(el));
-  for (const el of (root as Element).querySelectorAll?.('*') ?? []) {
-    if (el.shadowRoot) collectDeep(el.shadowRoot as unknown as Element, selector, out);
-  }
+/**
+ * 表示中ページが所有するチャンネルの名前を取得する。チャンネルページ以外では空文字。
+ * chページの自ch動画カードはチャンネル名を持たないため、NG登録時の補完に使う(登録時のみ。
+ * applyBlockListの非表示判定には使わない=NG済みchのページを開いてもカードは消さない)。
+ */
+export function getPageChannelName(): string {
+  if (!/^\/(@|channel\/)/.test(location.pathname)) return '';
+  const fromH1 = document.querySelector('yt-page-header-view-model h1')?.textContent?.trim();
+  if (fromH1) return fromH1;
+  return document.title.replace(/ - YouTube$/, '').trim();
 }
-
-/** カード内のメタデータブロックのDOM構造とチャンネルリンク候補をログする。 */
-export function dumpCardMetadata(card: Element): void {
-  debugLog('[meta] card:', card.tagName);
-
-  const metas: Element[] = [];
-  collectDeep(card, 'yt-content-metadata-view-model', metas);
-  debugLog('[meta] metadata blocks:', metas.length);
-  metas.forEach((meta, mi) => {
-    Array.from(meta.children).forEach((row, ri) => {
-      debugLog(`[meta] block${mi} row${ri}:`, (row as HTMLElement).outerHTML.slice(0, 500));
-    });
-  });
-
-  const links: Element[] = [];
-  collectDeep(card, 'a[href*="/@"], a[href*="/channel/"]', links);
-  debugLog('[meta] channel-ish links:', links.length);
-  links.forEach((a, i) => {
-    debugLog(`[meta] link${i}:`, a.getAttribute('href'), '| text:', a.textContent?.trim().slice(0, 40) || '-');
-  });
-}
-
-// ---- 一時計測コードここまで ----
 
 /**
  * ルール登録・ログ保存・カード除去・トースト表示までを一括で行う。

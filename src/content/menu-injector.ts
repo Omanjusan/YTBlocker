@@ -1,4 +1,4 @@
-import { blockAndLog, CARD_SELECTOR, dumpCardMetadata, getChannelName, getVideoTitle, isInsideAdContainer } from './blocker';
+import { blockAndLog, CARD_SELECTOR, getChannelName, getPageChannelName, getVideoTitle, isInsideAdContainer } from './blocker';
 import { debugLog } from '../shared/debug';
 
 type OnAdded = () => void;
@@ -76,9 +76,13 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
   }
 
   const title = getVideoTitle(card);
-  const channel = getChannelName(card);
+  let channel = getChannelName(card);
+  // chページの自ch動画カードはチャンネル名を持たないため、ページ所有chの名前で補完する(登録時のみ)
+  if (!channel) {
+    channel = getPageChannelName();
+    if (channel) debugLog('injectItems: channel from page header:', channel);
+  }
   debugLog('injectItems: title:', title || '(empty)', '| channel:', channel || '(empty)');
-  dumpCardMetadata(card); // 一時計測(チャンネル名抽出調査用、調査完了後に削除)
   if (!title && !channel) {
     debugLog('injectItems: title/channel both empty, bail');
     return;
