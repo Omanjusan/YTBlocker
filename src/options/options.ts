@@ -1,7 +1,7 @@
 import {
   addEntry, clearLogs, estimateEntryBytes, generateId, getBlockShortsEnabled,
-  getEntries, getLogs, getScoutModeEnabled, getUsageBytes, isActiveArea, isSyncEnabled, itemByteSize, MAX_ENTRY_BYTES,
-  removeEntry, setBlockShortsEnabled, setScoutModeEnabled, STORAGE_KEYS, switchSyncArea, SYNC_TOTAL_BUDGET, updateEntry,
+  getEntries, getLogs, getScoutModeEnabled, getUsageBytes, isActiveArea, isLogDisabled, isSyncEnabled, itemByteSize, MAX_ENTRY_BYTES,
+  removeEntry, setBlockShortsEnabled, setLogDisabled, setScoutModeEnabled, STORAGE_KEYS, switchSyncArea, SYNC_TOTAL_BUDGET, updateEntry,
 } from '../shared/storage';
 import { applyStaticI18n, getLanguage, LANGS, setLanguage, t, toIntlLocale, type Lang } from '../shared/i18n';
 import type { BlockEntry, MatchTarget } from '../shared/types';
@@ -12,6 +12,7 @@ const usageBadge      = document.getElementById('usage-badge')      as HTMLSpanE
 const shortsCheckbox  = document.getElementById('shorts-checkbox')  as HTMLInputElement;
 const scoutCheckbox   = document.getElementById('scout-checkbox')   as HTMLInputElement;
 const syncLocalCheckbox = document.getElementById('sync-local-checkbox') as HTMLInputElement;
+const logDisabledCheckbox = document.getElementById('log-disabled-checkbox') as HTMLInputElement;
 const formCard        = document.getElementById('form-card')        as HTMLElement;
 const sampleInput     = document.getElementById('sample-input')     as HTMLInputElement;
 const regexInput      = document.getElementById('regex-input')      as HTMLInputElement;
@@ -121,6 +122,18 @@ syncLocalCheckbox.addEventListener('change', async () => {
   } finally {
     syncLocalCheckbox.disabled = false;
   }
+});
+
+// ---- ブロックログ表示無効化設定 ----
+
+isLogDisabled().then((disabled) => {
+  logDisabledCheckbox.checked = disabled;
+});
+
+logDisabledCheckbox.addEventListener('change', async () => {
+  await setLogDisabled(logDisabledCheckbox.checked);
+  if (logDisabledCheckbox.checked) await clearLogs();
+  await renderLog();
 });
 
 // ---- リアルタイムマッチ判定 ----
@@ -314,10 +327,16 @@ function formatTime(ts: number): string {
   });
 }
 
-/** ブロック履歴ログを新しい順に描画する。 */
+/** ブロック履歴ログを新しい順に描画する。表示無効化中は常に空表示にする。 */
 async function renderLog(): Promise<void> {
-  const logs = await getLogs();
   logList.innerHTML = '';
+
+  if (await isLogDisabled()) {
+    logList.innerHTML = `<p class="empty-msg">${t('log.disabledMsg', currentLang)}</p>`;
+    return;
+  }
+
+  const logs = await getLogs();
 
   if (logs.length === 0) {
     logList.innerHTML = `<p class="empty-msg">${t('log.empty', currentLang)}</p>`;
@@ -354,7 +373,7 @@ btnClearLog.addEventListener('click', async () => {
 // ---- ストレージ変更をリアルタイム反映 ----
 
 browser.storage.onChanged.addListener(async (changes, area) => {
-  if (area === 'local' && changes[STORAGE_KEYS.log]) renderLog();
+  if (area === 'local' && (changes[STORAGE_KEYS.log] || changes[STORAGE_KEYS.logDisabled])) renderLog();
 
   if (await isActiveArea(area)) {
     // 全チャンクを読み直さず、変化したキーごとの差分バイト数だけキャッシュへ反映する

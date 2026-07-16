@@ -5,6 +5,7 @@ export const STORAGE_KEYS = {
   rulesPrefix: 'ytblocker_rules_',
   settings: 'ytblocker_settings',
   log: 'ytblocker_log',
+  logDisabled: 'ytblocker_log_disabled',
 } as const;
 
 const LOG_KEY = STORAGE_KEYS.log;
@@ -236,9 +237,10 @@ export async function getLogs(): Promise<BlockLog[]> {
   return (result[LOG_KEY] as BlockLog[] | undefined) ?? [];
 }
 
-/** ブロック履歴ログを追加する。合計件数が LOG_MAX を超えた分は古い順に切り捨てる。 */
+/** ブロック履歴ログを追加する。合計件数が LOG_MAX を超えた分は古い順に切り捨てる。ログ無効時は何もしない。 */
 export async function addLogs(newEntries: BlockLog[]): Promise<void> {
   if (newEntries.length === 0) return;
+  if (await isLogDisabled()) return;
   const logs = await getLogs();
   const combined = [...newEntries, ...logs].slice(0, LOG_MAX);
   await browser.storage.local.set({ [LOG_KEY]: combined });
@@ -247,6 +249,16 @@ export async function addLogs(newEntries: BlockLog[]): Promise<void> {
 /** ブロック履歴ログを全件削除する。 */
 export async function clearLogs(): Promise<void> {
   await browser.storage.local.set({ [LOG_KEY]: [] });
+}
+
+/** ブロックログの記録/表示を無効化しているか。パフォーマンス懸念があるユーザー向けの設定。 */
+export async function isLogDisabled(): Promise<boolean> {
+  const result = await browser.storage.local.get(STORAGE_KEYS.logDisabled);
+  return (result[STORAGE_KEYS.logDisabled] as boolean | undefined) ?? false;
+}
+
+export async function setLogDisabled(disabled: boolean): Promise<void> {
+  await browser.storage.local.set({ [STORAGE_KEYS.logDisabled]: disabled });
 }
 
 async function getSettings(): Promise<Settings> {
