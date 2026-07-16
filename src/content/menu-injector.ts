@@ -94,6 +94,29 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
   }
 }
 
+/**
+ * 三点メニューの見切れ対策。appendChild直後は追加ノードのレイアウトが未確定のことがあり、
+ * その状態で dropdown.refit() を呼んでも古いサイズのまま扱われることがある。
+ * offsetHeight読み取りで強制的にリフローさせてから refit() を呼び、
+ * 次フレームでももう一度実行する(1回目でまだ反映しきれないケースの保険)。
+ */
+function refitMenuDropdown(listbox: Element): void {
+  const el = listbox as HTMLElement;
+  const dropdown = el.closest('tp-yt-iron-dropdown') as (HTMLElement & { refit?: () => void }) | null;
+
+  const runRefit = () => {
+    void el.offsetHeight;
+    if (dropdown && typeof dropdown.refit === 'function') {
+      dropdown.refit();
+    } else {
+      window.dispatchEvent(new Event('resize'));
+    }
+  };
+
+  runRefit();
+  requestAnimationFrame(runRefit);
+}
+
 /** YouTube側が開いた三点メニューの listbox 要素を探す。DOM構造の版差に応じて複数セレクタを試す。 */
 function findMenuListbox(): Element | null {
   const candidates: [string, string][] = [
@@ -178,6 +201,7 @@ export function setupMenuInjector(onAdded: OnAdded): void {
         injectAttempts++;
         debugLog('menuObserver: injecting (attempt', injectAttempts, ')');
         injectItems(pendingCard, listbox, onAdded);
+        refitMenuDropdown(listbox);
         // 即resetせず監視を継続し、YouTube側に消された場合は次のmutationで再注入する。
         // 監視はcleanupTimerで終了する。
       });
