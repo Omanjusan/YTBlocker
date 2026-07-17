@@ -34,7 +34,7 @@ You can register strings to treat as NG (blocked) from the settings screen.
 You can evaluate against the video title, the channel name, or both.
 Regular expressions are supported, so you can create general-purpose blocking rules too.
 
-![Settings screen sample](settingssample.png)
+![Settings screen sample](settingssample.en.png)
 
 ### Blocking method 2: Block via the ︙ menu next to a video
 
