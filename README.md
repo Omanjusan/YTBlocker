@@ -1,45 +1,47 @@
 # YTBlocker
 
-## 目的
+[日本語版はこちら](README.ja.md)
 
-Firefoxの拡張機能です。ユーザーが設定したルールによりYoutubeのおすすめ動画カードの表示をブロックできます。既存のアドオンでは日本語込の動画ブロックがうまく機能しないことがあったのでそれを補完しました
+## Purpose
 
-## 機能
+A Firefox extension. It lets users block recommended video cards on YouTube based on rules they set. Some existing add-ons don't handle blocking of video titles containing Japanese text well, so this extension was made to complement that.
 
-- Youtubeのみが対象.無限スクロールによる好みでない動画カードを設定した動画名もしくはチャンネル名の一致で非表示化
-- 設定によりショート動画の一括非表示化を選択可、細かい設定はできませんが
+## Features
 
-## 特徴
+- Works on YouTube only. Hides video cards that don't match your preference (as they appear via infinite scroll) by matching the video title or channel name
+- You can optionally hide all Shorts at once via a setting, though fine-grained control isn't available
 
-- 2通りの非表示導線
-動画脇にある︙メニュー内から直接動画名もしくはチャンネル名でブロック（こちらは完全一致）もしくは文字列指定の2通り
-- チャンネル内や動画再生中のおすすめ動画欄も︙のメニュー対象
-- Firefoxのアカウントストレージを使うので同一アカウントなら別の環境への設定引き継ぎ可能（ローカル保存のみにもできます）
+## Highlights
 
-## インストール
+- Two ways to hide videos
+Block directly by video title or channel name from the ︙ menu next to a video (exact match), or by specifying a string in settings
+- The ︙ menu also works on recommended video lists shown inside a channel page or during video playback
+- Uses Firefox's account storage, so settings can carry over to another environment under the same account (local-only storage is also selectable)
 
-~~Firefoxの拡張機能YTBlockerで検索してインストールしてください~~
+## Installation
 
-Firefoxのアドオン公開の審査中でまだ公開できません。
+~~Search for "YTBlocker" in Firefox add-ons and install it.~~
 
-## 使い方
+Currently under review for publication on Firefox Add-ons, so it isn't available yet.
 
-インストールが終わったらYoutubeにアクセスし、下記の2通りの方法のどちらかでブロックルールを決めていくだけです。
+## Usage
 
-### ブロック方法 1 : 設定画面からNG文字列を設定
+Once installed, go to YouTube and just set up blocking rules using either of the two methods below.
 
-設定画面からNG指定にする文字列を登録できます。
-動画名または動画チャンネル名に対して評価をするかのどちらか、両方による評価のブロックも可能です。
-正規表現がつかえるので汎用的なブロックもできます。
+### Blocking method 1: Set NG strings from the settings screen
 
-![設定画面サンプル](settingssample.png)
+You can register strings to treat as NG (blocked) from the settings screen.
+You can evaluate against the video title, the channel name, or both.
+Regular expressions are supported, so you can create general-purpose blocking rules too.
 
-### ブロック方法 2 : 動画横にある︙からブロック指定
+![Settings screen sample](settingssample.png)
 
-動画横にある︙メニューからブロックできます。こちらは文字列より簡単にブロック可能です。
+### Blocking method 2: Block via the ︙ menu next to a video
 
-![ボタンサンプル](blockmenu.png)
+You can block directly from the ︙ menu next to a video. This is simpler than using strings.
 
-## 動作上の注意
+![Button sample](blockmenu.png)
 
-ブロック対象のチャンネルに移動したとき、該当チャンネルが所有するコンテンツブロックまでは行いません。一時的に表示されるようになりますがバグではありません。チャンネルカードやその配下のコンテンツまではブロックしないと理解ください。ただしショート動画は設定どおりに動作します。また、該当チャンネルの中にある他チャンネル所有のブロック済み動画は非表示扱いで動作します。
+## Notes on behavior
+
+When you navigate to a blocked channel, content owned by that channel isn't blocked at the channel level. It will appear temporarily — this is not a bug. Please understand that the channel card and the content under it are not blocked. Shorts, however, behave according to your settings. Also, already-blocked videos from other channels that appear within that channel's page are still hidden as expected.
