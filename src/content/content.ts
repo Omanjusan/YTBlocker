@@ -1,4 +1,5 @@
 import { addLogs, getBlockShortsEnabled, getEntries, getScoutModeEnabled, isActiveArea, STORAGE_KEYS } from '../shared/storage';
+import { getLanguage } from '../shared/i18n';
 import { applyBlockList, CARD_SELECTOR, isInsideAdContainer } from './blocker';
 import { scoutScan } from './card-scout';
 import { setupMenuInjector } from './menu-injector';
@@ -30,8 +31,10 @@ async function refresh(): Promise<void> {
   await refresh();
   scheduleScout();
 
-  // 三点メニュー経由のブロック。document全体のclickリスナー1本なので初回登録のみでよい
-  setupMenuInjector(async () => { await refresh(); });
+  // 三点メニュー経由のブロック。document全体のclickリスナー1本なので初回登録のみでよい。
+  // 言語切替はページ再読み込みで反映される想定(リアルタイム監視はしない)
+  const lang = await getLanguage();
+  setupMenuInjector(lang, async () => { await refresh(); });
 
   browser.storage.onChanged.addListener(async (changes, area) => {
     if (!(await isActiveArea(area))) return;

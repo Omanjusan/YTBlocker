@@ -1,5 +1,6 @@
 import { blockAndLog, CARD_SELECTOR, getChannelName, getPageChannelName, getVideoTitle, isInsideAdContainer } from './blocker';
 import { debugLog } from '../shared/debug';
+import { t, type Lang } from '../shared/i18n';
 
 type OnAdded = () => void;
 
@@ -61,7 +62,7 @@ function createMenuItem(label: string, onClick: () => void): HTMLElement {
 }
 
 /** 開いた三点メニューの listbox に区切り線とブロック用の項目を追加する。既に追加済みなら何もしない。 */
-function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
+function injectItems(card: Element, listbox: Element, lang: Lang, onAdded: OnAdded): void {
   if (listbox.querySelector('.ytblocker-item')) {
     debugLog('injectItems: already injected, skip');
     return;
@@ -95,7 +96,7 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
 
   if (title) {
     listbox.appendChild(
-      createMenuItem('🚫 この動画をブロック', async () => {
+      createMenuItem(t('menu.blockVideo', lang), async () => {
         await blockAndLog(card, 'video', title, title, channel, onAdded);
       })
     );
@@ -103,7 +104,7 @@ function injectItems(card: Element, listbox: Element, onAdded: OnAdded): void {
 
   if (channel) {
     listbox.appendChild(
-      createMenuItem('🚫 このチャンネルをブロック', async () => {
+      createMenuItem(t('menu.blockChannel', lang), async () => {
         await blockAndLog(card, 'channel', channel, title, channel, onAdded);
       })
     );
@@ -197,7 +198,7 @@ function findMenuListbox(): Element | null {
  * 注入後も監視を続け、消された場合は最大3回まで再注入する。
  * 2秒経過で監視を終了する。
  */
-export function setupMenuInjector(onAdded: OnAdded): void {
+export function setupMenuInjector(lang: Lang, onAdded: OnAdded): void {
   debugLog('setupMenuInjector: registered');
 
   document.addEventListener(
@@ -253,7 +254,7 @@ export function setupMenuInjector(onAdded: OnAdded): void {
         }
         injectAttempts++;
         debugLog('tryInject: injecting (attempt', injectAttempts, ')');
-        injectItems(pendingCard, listbox, onAdded);
+        injectItems(pendingCard, listbox, lang, onAdded);
         expandMenuSheet(listbox);
         // 即resetせず監視を継続し、YouTube側に消された場合は次のmutationで再注入する。
         // 監視はcleanupTimerで終了する。
