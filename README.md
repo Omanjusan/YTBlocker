@@ -44,4 +44,8 @@ You can block directly from the ︙ menu next to a video. This is simpler than u
 
 ## Notes on behavior
 
-When you navigate to a blocked channel, content owned by that channel isn't blocked at the channel level. It will appear temporarily — this is not a bug. Please understand that the channel card and the content under it are not blocked. Shorts, however, behave according to your settings. Also, already-blocked videos from other channels that appear within that channel's page are still hidden as expected.
+When you navigate to a blocked channel, videos owned by that channel are not blocked. They will appear temporarily — this is not a bug. Please understand that the channel card and the content under it are not blocked. Shorts, however, behave according to your settings. Also, blocked videos owned by other channels that appear within that blocked channel's page are still hidden as expected.
+
+## License
+
+This software is provided under the [MIT License](LICENSE).
