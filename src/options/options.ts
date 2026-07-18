@@ -1,9 +1,15 @@
 import {
-  addEntry, clearLogs, estimateEntryBytes, generateId, getBlockShortsEnabled,
-  getEntries, getLogs, getScoutModeEnabled, getUsageBytes, isActiveArea, isLogDisabled, isSyncEnabled, itemByteSize, MAX_ENTRY_BYTES,
-  removeEntry, setBlockShortsEnabled, setLogDisabled, setScoutModeEnabled, STORAGE_KEYS, switchSyncArea, SYNC_TOTAL_BUDGET, updateEntry,
+  addEntry, clearLogs, estimateEntryBytes, generateId,
+  getBlockShortsEnabled, getEntries, getLogs, getScoutModeEnabled,
+  getUsageBytes, isActiveArea, isLogDisabled, isRuleOrSettingsKey,
+  isSyncEnabled, itemByteSize, MAX_ENTRY_BYTES, removeEntry,
+  setBlockShortsEnabled, setLogDisabled, setScoutModeEnabled, STORAGE_KEYS,
+  switchSyncArea, SYNC_TOTAL_BUDGET, updateEntry,
 } from '../shared/storage';
-import { applyStaticI18n, getLanguage, LANGS, setLanguage, t, toIntlLocale, type Lang } from '../shared/i18n';
+import {
+  applyStaticI18n, getLanguage, LANGS, setLanguage,
+  t, toIntlLocale, type Lang,
+} from '../shared/i18n';
 import type { BlockEntry, MatchTarget } from '../shared/types';
 
 const versionLabel        = document.getElementById('version-label')         as HTMLSpanElement;
@@ -58,7 +64,7 @@ langSelect.addEventListener('change', async () => {
   await applyLanguage(lang);
 });
 
-/** storage.sync の現在の使用バイト数。起動時に実測し、以降は onChanged の差分で更新する(毎回全チャンクを読み直さない)。 */
+/** 現在のarea上でルール+設定が使用しているバイト数。起動時に実測し、以降は onChanged の差分で更新する(毎回全チャンクを読み直さない)。 */
 let usedBytes = 0;
 /** 容量が100%に達しているかどうか。達している場合は登録処理そのものをスキップする。 */
 let usageAtCapacity = false;
@@ -393,7 +399,9 @@ browser.storage.onChanged.addListener(async (changes, area) => {
 
   if (await isActiveArea(area)) {
     // 全チャンクを読み直さず、変化したキーごとの差分バイト数だけキャッシュへ反映する
+    // (getUsageBytes と同じくルール+設定のキーのみを集計対象にする)
     for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
+      if (!isRuleOrSettingsKey(key)) continue;
       const oldSize = oldValue === undefined ? 0 : itemByteSize(key, oldValue);
       const newSize = newValue === undefined ? 0 : itemByteSize(key, newValue);
       usedBytes += newSize - oldSize;

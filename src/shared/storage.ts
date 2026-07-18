@@ -71,9 +71,7 @@ export async function switchSyncArea(enabled: boolean): Promise<void> {
   const to = enabled ? browser.storage.sync : browser.storage.local;
 
   const all = await from.get(null);
-  const migratedKeys = Object.keys(all).filter(
-    (k) => k.startsWith(STORAGE_KEYS.rulesPrefix) || k === STORAGE_KEYS.settings,
-  );
+  const migratedKeys = Object.keys(all).filter(isRuleOrSettingsKey);
 
   if (migratedKeys.length > 0) {
     const payload = Object.fromEntries(migratedKeys.map((k) => [k, all[k]]));
@@ -129,10 +127,17 @@ export function itemByteSize(key: string, value: unknown): number {
   return byteLength(key) + byteLength(value);
 }
 
-/** storage.sync 全体(全キー)の現在の使用バイト数を実測する。起動時の初期化用(以降は onChanged の差分で追う想定)。 */
+/** NG登録容量ゲージの集計対象(ルールチャンク+設定)のキーかどうか。ログ・言語設定等の無関係キーを容量に算入しないために使う。 */
+export function isRuleOrSettingsKey(key: string): boolean {
+  return key.startsWith(STORAGE_KEYS.rulesPrefix) || key === STORAGE_KEYS.settings;
+}
+
+/** 現在のarea上でルール+設定が消費しているバイト数を実測する。起動時の初期化用(以降は onChanged の差分で追う想定)。 */
 export async function getUsageBytes(): Promise<number> {
   const all = await (await getArea()).get(null);
-  return Object.entries(all).reduce((sum, [key, value]) => sum + itemByteSize(key, value), 0);
+  return Object.entries(all)
+    .filter(([key]) => isRuleOrSettingsKey(key))
+    .reduce((sum, [key, value]) => sum + itemByteSize(key, value), 0);
 }
 
 /** チャンク番号からstorageキー名を組み立てる(例: index=0 なら "ytblocker_rules_0")。 */
