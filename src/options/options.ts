@@ -320,18 +320,13 @@ function enterEditMode(entry: BlockEntry): void {
   (tab === 'general' ? generalInput : regexInput).focus();
 }
 
-/** 編集モードを終了し、新規登録モードに戻す(タブ・一致方法も初期状態=一般タブ/完全一致に戻す)。 */
+/** 編集モードを終了し、新規登録モードに戻す。タブは更新/登録に関わらず現在選択中のものを維持する。 */
 function exitEditMode(): void {
   editingId = null;
   generalInput.value = '';
   regexInput.value = '';
   sampleInput.value = '';
   setSelectedTarget('video');
-
-  setActiveTab('general');
-  lastActiveTab = 'general';
-  setSelectedMatchType('general', 'exact');
-  setSelectedMatchType('advanced', 'regex');
 
   updateMatchIndicator();
   updateByteBudget();
