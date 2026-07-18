@@ -38,7 +38,7 @@ Regular expressions are supported, so you can create general-purpose blocking ru
 
 You can block directly from the ︙ menu next to a video. This is simpler than using strings.
 
-![Button sample](blockmenu.png)
+![Button sample](blockmenuus.png)
 
 ## Notes on behavior
 
