@@ -25,9 +25,10 @@ src/
 
 ```
 content.ts ─┬─> blocker.ts ─┬─> shared/storage.ts ─> shared/types.ts
-            │               └─> toast.ts
+            │               └─> toast.ts ─> shared/storage.ts
             ├─> menu-injector.ts ─> blocker.ts, shared/debug.ts, shared/i18n.ts
-            └─> card-scout.ts ─> blocker.ts
+            ├─> card-scout.ts ─> blocker.ts
+            └─> shared/storage.ts, shared/i18n.ts
 
 options.ts     ──> shared/storage.ts, shared/types.ts, shared/i18n.ts
 background.ts  ──> (browser API のみ)
