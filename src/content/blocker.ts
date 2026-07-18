@@ -10,7 +10,7 @@ export const CARD_SELECTOR = [
   'ytd-grid-video-renderer',
   'ytd-reel-item-renderer',
   'ytd-shorts-lockup-view-model',     // 旧バージョン
-  'ytm-shorts-lockup-view-model-v2',  // 検索結果ページ用 ← これが抜けてた
+  'ytm-shorts-lockup-view-model-v2',  // 検索結果ページ用
   'yt-lockup-view-model',             // 新UI汎用カード(watchページ関連動画など)
 ].join(', ');
 

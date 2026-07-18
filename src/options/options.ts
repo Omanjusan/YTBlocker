@@ -6,23 +6,23 @@ import {
 import { applyStaticI18n, getLanguage, LANGS, setLanguage, t, toIntlLocale, type Lang } from '../shared/i18n';
 import type { BlockEntry, MatchTarget } from '../shared/types';
 
-const versionLabel    = document.getElementById('version-label')    as HTMLSpanElement;
-const langSelect      = document.getElementById('lang-select')      as HTMLSelectElement;
-const usageBadge      = document.getElementById('usage-badge')      as HTMLSpanElement;
-const shortsCheckbox  = document.getElementById('shorts-checkbox')  as HTMLInputElement;
-const scoutCheckbox   = document.getElementById('scout-checkbox')   as HTMLInputElement;
-const syncLocalCheckbox = document.getElementById('sync-local-checkbox') as HTMLInputElement;
+const versionLabel        = document.getElementById('version-label')         as HTMLSpanElement;
+const langSelect          = document.getElementById('lang-select')           as HTMLSelectElement;
+const usageBadge          = document.getElementById('usage-badge')           as HTMLSpanElement;
+const shortsCheckbox      = document.getElementById('shorts-checkbox')       as HTMLInputElement;
+const scoutCheckbox       = document.getElementById('scout-checkbox')        as HTMLInputElement;
+const syncLocalCheckbox   = document.getElementById('sync-local-checkbox')   as HTMLInputElement;
 const logDisabledCheckbox = document.getElementById('log-disabled-checkbox') as HTMLInputElement;
-const formCard        = document.getElementById('form-card')        as HTMLElement;
-const sampleInput     = document.getElementById('sample-input')     as HTMLInputElement;
-const regexInput      = document.getElementById('regex-input')      as HTMLInputElement;
-const matchIndicator  = document.getElementById('match-indicator')  as HTMLSpanElement;
-const budgetText      = document.getElementById('budget-text')      as HTMLSpanElement;
-const btnSubmit       = document.getElementById('btn-submit')       as HTMLButtonElement;
-const btnCancel       = document.getElementById('btn-cancel')       as HTMLButtonElement;
-const entryList       = document.getElementById('entry-list')       as HTMLDivElement;
-const logList         = document.getElementById('log-list')         as HTMLDivElement;
-const btnClearLog     = document.getElementById('btn-clear-log')    as HTMLButtonElement;
+const formCard            = document.getElementById('form-card')             as HTMLElement;
+const sampleInput         = document.getElementById('sample-input')          as HTMLInputElement;
+const regexInput          = document.getElementById('regex-input')           as HTMLInputElement;
+const matchIndicator      = document.getElementById('match-indicator')       as HTMLSpanElement;
+const budgetText          = document.getElementById('budget-text')           as HTMLSpanElement;
+const btnSubmit           = document.getElementById('btn-submit')            as HTMLButtonElement;
+const btnCancel           = document.getElementById('btn-cancel')            as HTMLButtonElement;
+const entryList           = document.getElementById('entry-list')            as HTMLDivElement;
+const logList             = document.getElementById('log-list')              as HTMLDivElement;
+const btnClearLog         = document.getElementById('btn-clear-log')         as HTMLButtonElement;
 
 /** 編集中のブロックルールID。null なら新規登録モード。 */
 let editingId: string | null = null;

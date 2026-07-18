@@ -4,6 +4,15 @@ import { t, type Lang } from '../shared/i18n';
 
 type OnAdded = () => void;
 
+/** メニュー監視のポーリング間隔。DOM使い回しによるdisplay切替はMutationObserverのchildList監視だけでは検出できないため併用する。 */
+const POLL_INTERVAL_MS = 200;
+/** メニュー監視を打ち切るまでのタイムアウト。 */
+const WATCH_TIMEOUT_MS = 2000;
+/** YouTube側にDOMを消された場合の項目再注入の最大試行回数。 */
+const MAX_INJECT_ATTEMPTS = 3;
+/** シートの高さ再適用を遅延実行するまでの時間。YouTube側の開閉アニメーション等の遅延上書きに追従するため即時・次フレームに続けて最後にもう一度適用する。 */
+const SHEET_RESIZE_DELAY_MS = 150;
+
 let pendingCard: Element | null = null;
 let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -137,7 +146,7 @@ function updateSepVisibility(listbox: Element): void {
  * 配下の overflow:auto なDIVでクリップされて見切れる(実測でこの構造を確認済み)。
  * そこで listbox の実コンテンツ高に合わせて max-height を自前で上書きして全項目を展開する。
  * 上限は yt-contextual-sheet-layout 側の max-height(ビューポート由来)でクランプする。
- * YouTube側の開閉アニメーション等が遅れて上書きしてくるため、即時・次フレーム・150ms後の3回適用する。
+ * YouTube側の開閉アニメーション等が遅れて上書きしてくるため、即時・次フレーム・SHEET_RESIZE_DELAY_MS後の3回適用する。
  * 旧UI(tp-yt-paper-listbox系)はこの構造を持たないため、従来どおりresizeイベントで再計算を促す。
  */
 function expandMenuSheet(listbox: Element): void {
@@ -165,16 +174,16 @@ function expandMenuSheet(listbox: Element): void {
 
   apply();
   requestAnimationFrame(apply);
-  setTimeout(apply, 150);
+  setTimeout(apply, SHEET_RESIZE_DELAY_MS);
 }
 
 /** YouTube側が開いた三点メニューの listbox 要素を探す。DOM構造の版差に応じて複数セレクタを試す。 */
 function findMenuListbox(): Element | null {
   const candidates: [string, string][] = [
-    ['yt-list-view-model[role="menu"]', 'D'],  // 新UI(yt-lockup-view-model系カードのシート型メニュー)
     ['ytd-menu-popup-renderer tp-yt-paper-listbox', 'A'],
     ['tp-yt-paper-listbox[role="listbox"]', 'B'],
     ['ytd-menu-popup-renderer', 'C'],
+    ['yt-list-view-model[role="menu"]', 'D'],  // 新UI(yt-lockup-view-model系カードのシート型メニュー)
   ];
   for (const [sel, label] of candidates) {
     for (const hit of document.querySelectorAll(sel)) {
@@ -247,7 +256,7 @@ export function setupMenuInjector(lang: Lang, onAdded: OnAdded): void {
           updateSepVisibility(listbox);
           return;
         }
-        if (injectAttempts >= 3) {
+        if (injectAttempts >= MAX_INJECT_ATTEMPTS) {
           debugLog('tryInject: inject attempts exhausted, giving up');
           reset();
           return;
@@ -262,16 +271,16 @@ export function setupMenuInjector(lang: Lang, onAdded: OnAdded): void {
 
       // メニューDOMが使い回される場合、再オープン時はノード追加が起きず
       // display切替(style属性変更)だけで表示されるため、childList監視では検出できない。
-      // MutationObserverと並走して200ms間隔のポーリングでも同じ判定を回す(cleanupTimerで終了)。
+      // MutationObserverと並走してPOLL_INTERVAL_MS間隔のポーリングでも同じ判定を回す(cleanupTimerで終了)。
       menuObserver = new MutationObserver(tryInject);
       menuObserver.observe(document.body, { childList: true, subtree: true });
-      pollTimer = setInterval(tryInject, 200);
+      pollTimer = setInterval(tryInject, POLL_INTERVAL_MS);
       debugLog('menuObserver: observing for card', card.tagName);
 
       cleanupTimer = setTimeout(() => {
-        debugLog('cleanupTimer: 2s elapsed, stop watching menu');
+        debugLog('cleanupTimer: WATCH_TIMEOUT_MS elapsed, stop watching menu');
         reset();
-      }, 2000);
+      }, WATCH_TIMEOUT_MS);
     },
     true
   );
