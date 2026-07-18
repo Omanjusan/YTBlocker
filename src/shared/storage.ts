@@ -19,8 +19,9 @@ export const MAX_ENTRY_BYTES = CHUNK_BYTE_LIMIT;
 /** storage.sync 全体の容量上限(約100KB)。ここに対する使用率をUIの容量ゲージに使う。 */
 export const SYNC_TOTAL_BUDGET = 102400;
 
-/** id/createdAtは値の長さに依らずほぼ一定サイズなので、バイト見積もり用にダミー値を固定で使う。 */
-const DUMMY_ID = '000000000000-0000000';
+/** id/createdAtは値の長さに依らずほぼ一定サイズなので、バイト見積もり用にダミー値を固定で使う。
+ * idはgenerateIdの実形式と同じ13桁のDate.now()+ハイフン+乱数7文字に合わせる。 */
+const DUMMY_ID = '0000000000000-0000000';
 const DUMMY_CREATED_AT = 1700000000000;
 
 /** ルール1件の保存形式。オブジェクトではなくタプルにしてキー名分のバイトを節約する。 [id, code, value, createdAt] */
@@ -117,10 +118,11 @@ function fromStored(stored: StoredEntry): BlockEntry {
   return { id, value, createdAt, ...decodeCode(code) };
 }
 
-/** フォーム入力中の target/matchType/value からルール1件の保存バイト数を見積もる(id/createdAtはダミー固定値)。 */
+/** フォーム入力中の target/matchType/value からルール1件の保存バイト数を見積もる(id/createdAtはダミー固定値)。
+ * addEntryの単独チャンク判定(byteLength([stored]))と一致するよう、配列で包んだサイズで測る。 */
 export function estimateEntryBytes(target: MatchTarget, matchType: MatchType, value: string): number {
   const stored: StoredEntry = [DUMMY_ID, encodeCode(target, matchType), value, DUMMY_CREATED_AT];
-  return byteLength(stored);
+  return byteLength([stored]);
 }
 
 /** storage.sync の1アイテム(キー+値)が消費するバイト数。容量ゲージの算出・差分更新に使う。 */
