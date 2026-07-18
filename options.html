@@ -156,6 +156,7 @@
 
     /* フォーム行 */
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field.field-test { background: #f5f5f5; border-radius: 4px; padding: 10px 12px; }
     .field label { font-size: 12px; font-weight: 600; color: #606060; }
     .field-note { font-size: 11px; color: #888; line-height: 1.5; }
     .field input {
@@ -390,13 +391,13 @@
         </div>
       </div>
 
-      <div class="field">
-        <label for="sample-input" data-i18n="form.sampleLabel">サンプル文字列（動画タイトルまたはチャンネル名）　例 test ch</label>
+      <div class="field field-test">
+        <label for="sample-input" data-i18n="form.sampleLabel">テスト用サンプル文字列（保存されません・動画タイトルまたはチャンネル名）　例 test ch</label>
         <input id="sample-input" type="text" />
       </div>
 
       <div class="field">
-        <label for="regex-input" data-i18n="form.regexLabel">正規表現パターン　例 aaaa | bbbb</label>
+        <label for="regex-input" data-i18n="form.regexLabel">登録する正規表現パターン（これが保存されます）　例 aaaa|bbbb</label>
         <p class="field-note" data-i18n="form.matchNote">サンプル文字列との判定結果は下の行頭に表示されます。サンプル文字列が空なら常に「不適合」表示</p>
         <div class="regex-row">
           <input id="regex-input" type="text" />
