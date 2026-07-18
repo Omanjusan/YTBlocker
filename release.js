@@ -19,7 +19,6 @@ const SRC_ZIP_INCLUDES = [
   'tsconfig.json',
   'build.js',
   'options.html',
-  'popup.html',
   'doc',
   'LICENSE',
   'README.md',

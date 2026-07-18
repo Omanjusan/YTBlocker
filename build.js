@@ -3,7 +3,6 @@ const watch = process.argv.includes('--watch');
 
 const targets = [
   { entryPoints: ['src/content/content.ts'],       outfile: 'dist/content.js'    },
-  { entryPoints: ['src/popup/popup.ts'],           outfile: 'dist/popup.js'      },
   { entryPoints: ['src/options/options.ts'],       outfile: 'dist/options.js'    },
   { entryPoints: ['src/background/background.ts'], outfile: 'dist/background.js' },
 ];

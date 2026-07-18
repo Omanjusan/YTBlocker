@@ -14,7 +14,6 @@ const STAGING_DIR = path.join(ROOT, '.web-ext-staging');
 const DIST_ZIP_INCLUDES = [
   'manifest.json',
   'options.html',
-  'popup.html',
   'dist',
   '_locales',
   'LICENSE',

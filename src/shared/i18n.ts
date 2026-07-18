@@ -201,9 +201,6 @@ const messages: Record<string, Dict> = {
   'log.video':        { ja: '動画: ', en: 'Video: ', de: 'Video: ', it: 'Video: ', fr: 'Vidéo : ', ko: '동영상: ', 'zh-CN': '视频: ', 'zh-TW': '影片: ' },
   'log.channel':      { ja: 'CH: ', en: 'Channel: ', de: 'Kanal: ', it: 'Canale: ', fr: 'Chaîne : ', ko: '채널: ', 'zh-CN': '频道: ', 'zh-TW': '頻道: ' },
   'log.pattern':      { ja: 'パターン: ', en: 'Pattern: ', de: 'Muster: ', it: 'Pattern: ', fr: 'Motif : ', ko: '패턴: ', 'zh-CN': '规则: ', 'zh-TW': '規則: ' },
-  'popup.blocking':   { ja: 'ブロック中:', en: 'Blocking:', de: 'Blockiert:', it: 'In blocco:', fr: 'Bloqués :', ko: '차단 중:', 'zh-CN': '屏蔽中:', 'zh-TW': '封鎖中:' },
-  'popup.unit':       { ja: '件', en: '', de: '', it: '', fr: '', ko: '건', 'zh-CN': '条', 'zh-TW': '筆' },
-  'popup.openOptions':{ ja: '設定を開く', en: 'Open settings', de: 'Einstellungen öffnen', it: 'Apri impostazioni', fr: 'Ouvrir les paramètres', ko: '설정 열기', 'zh-CN': '打开设置', 'zh-TW': '開啟設定' },
   'menu.blockVideo':   { ja: '🚫 この動画をブロック', en: '🚫 Block this video', de: '🚫 Dieses Video blockieren', it: '🚫 Blocca questo video', fr: '🚫 Bloquer cette vidéo', ko: '🚫 이 동영상 차단', 'zh-CN': '🚫 屏蔽此视频', 'zh-TW': '🚫 封鎖此影片' },
   'menu.blockChannel': { ja: '🚫 このチャンネルをブロック', en: '🚫 Block this channel', de: '🚫 Diesen Kanal blockieren', it: '🚫 Blocca questo canale', fr: '🚫 Bloquer cette chaîne', ko: '🚫 이 채널 차단', 'zh-CN': '🚫 屏蔽此频道', 'zh-TW': '🚫 封鎖此頻道' },
 };
