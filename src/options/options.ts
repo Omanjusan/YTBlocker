@@ -81,16 +81,18 @@ function getActiveValue(): string {
 }
 
 /**
- * タブ切替時、旧タブの値/一致方法を新タブへ引き継ぐ。
- * 一般→上級者は一致方法をそのままコピー(exact/partial)。
- * 上級者→一般は setSelectedMatchType のフォールバックにより regex が partial に変わる。
+ * タブ切替時、旧タブの値を新タブへ引き継ぐ。
+ * 一般→上級者は、値が入力済みなら一致方法もそのまま引き継ぎ、空欄なら正規表現を既定選択にする
+ * (空欄は「新しく上級者ルールを書く」意図とみなす)。
+ * 上級者→一般は setSelectedMatchType のフォールバックにより regex が partial に変わる形で引き継ぐ。
  */
 function syncTabOnSwitch(from: FormTab, to: FormTab): void {
   const value = from === 'general' ? generalInput.value : regexInput.value;
   if (to === 'general') generalInput.value = value;
   else regexInput.value = value;
 
-  setSelectedMatchType(to, getSelectedMatchTypeFor(from));
+  const matchType = to === 'advanced' && !value.trim() ? 'regex' : getSelectedMatchTypeFor(from);
+  setSelectedMatchType(to, matchType);
 }
 
 let lastActiveTab: FormTab = getActiveTab();
