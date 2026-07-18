@@ -20,9 +20,7 @@ Block directly by video title or channel name from the ︙ menu next to a video 
 
 ## Installation
 
-~~Search for "YTBlocker" in Firefox add-ons and install it.~~
-
-Currently under review for publication on Firefox Add-ons, so it isn't available yet.
+Search for "YTBlocker" in Firefox add-ons and install it ([add-on page](https://addons.mozilla.org/ja/firefox/addon/youtublocker/)).
 
 ## Usage
 

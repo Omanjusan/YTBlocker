@@ -20,9 +20,8 @@ Firefoxの拡張機能です。ユーザーが設定したルールによりYout
 
 ## インストール
 
-~~Firefoxの拡張機能YTBlockerで検索してインストールしてください~~
+Firefoxの拡張機能YTBlockerで検索してインストールしてください（[配布ページ](https://addons.mozilla.org/ja/firefox/addon/youtublocker/)）
 
-Firefoxのアドオン公開の審査中でまだ公開できません。
 
 ## 使い方
 
