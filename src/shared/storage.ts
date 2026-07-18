@@ -221,7 +221,7 @@ export async function removeEntry(id: string): Promise<void> {
  * 更新後も同じチャンクに収まればその場で上書き、収まらなければ
  * 元のチャンクから取り除いたうえで addEntry と同じロジックで空きのあるチャンクへ再配置する。
  */
-export async function updateEntry(id: string, patch: Partial<Pick<BlockEntry, 'target' | 'value'>>): Promise<void> {
+export async function updateEntry(id: string, patch: Partial<Pick<BlockEntry, 'target' | 'value' | 'matchType'>>): Promise<void> {
   const chunks = await getAllChunks();
 
   for (const chunk of chunks) {
