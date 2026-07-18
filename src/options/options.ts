@@ -10,7 +10,7 @@ import {
   applyStaticI18n, getLanguage, LANGS, setLanguage,
   t, toIntlLocale, type Lang,
 } from '../shared/i18n';
-import type { BlockEntry, MatchTarget } from '../shared/types';
+import type { BlockEntry, MatchTarget, MatchType } from '../shared/types';
 
 const versionLabel        = document.getElementById('version-label')         as HTMLSpanElement;
 const langSelect          = document.getElementById('lang-select')           as HTMLSelectElement;
@@ -20,6 +20,10 @@ const scoutCheckbox       = document.getElementById('scout-checkbox')        as 
 const syncLocalCheckbox   = document.getElementById('sync-local-checkbox')   as HTMLInputElement;
 const logDisabledCheckbox = document.getElementById('log-disabled-checkbox') as HTMLInputElement;
 const formCard            = document.getElementById('form-card')             as HTMLElement;
+const tabGeneral          = document.getElementById('tab-general')           as HTMLInputElement;
+const tabAdvanced         = document.getElementById('tab-advanced')          as HTMLInputElement;
+const generalInput        = document.getElementById('general-input')        as HTMLInputElement;
+const budgetTextGeneral   = document.getElementById('budget-text-general')   as HTMLParagraphElement;
 const sampleInput         = document.getElementById('sample-input')          as HTMLInputElement;
 const regexInput          = document.getElementById('regex-input')           as HTMLInputElement;
 const matchIndicator      = document.getElementById('match-indicator')       as HTMLSpanElement;
@@ -29,6 +33,76 @@ const btnCancel           = document.getElementById('btn-cancel')            as 
 const entryList           = document.getElementById('entry-list')            as HTMLDivElement;
 const logList             = document.getElementById('log-list')              as HTMLDivElement;
 const btnClearLog         = document.getElementById('btn-clear-log')         as HTMLButtonElement;
+
+/** 一般ルールタブの一致方法ラジオ(exact/partialの2択)。 */
+function generalMatchRadios(): HTMLInputElement[] {
+  return Array.from(document.querySelectorAll<HTMLInputElement>('input[name="match-general"]'));
+}
+/** 上級者ルールタブの一致方法ラジオ(exact/partial/regexの3択)。 */
+function advancedMatchRadios(): HTMLInputElement[] {
+  return Array.from(document.querySelectorAll<HTMLInputElement>('input[name="match-advanced"]'));
+}
+
+type FormTab = 'general' | 'advanced';
+
+/** 現在アクティブなタブ(一般ルール/上級者ルール)を返す。 */
+function getActiveTab(): FormTab {
+  return tabAdvanced.checked ? 'advanced' : 'general';
+}
+
+/** 指定したタブをアクティブにする(タブラジオのcheckedを切り替えるだけで、値の同期は行わない)。 */
+function setActiveTab(tab: FormTab): void {
+  tabGeneral.checked = tab === 'general';
+  tabAdvanced.checked = tab === 'advanced';
+}
+
+/** 指定タブの一致方法ラジオから、選択中の MatchType を取得する。 */
+function getSelectedMatchTypeFor(tab: FormTab): MatchType {
+  const radios = tab === 'general' ? generalMatchRadios() : advancedMatchRadios();
+  const checked = radios.find((r) => r.checked);
+  return (checked?.value as MatchType | undefined) ?? 'exact';
+}
+
+/** アクティブなタブの一致方法ラジオから、選択中の MatchType を取得する。 */
+function getSelectedMatchType(): MatchType {
+  return getSelectedMatchTypeFor(getActiveTab());
+}
+
+/** 指定したタブの一致方法ラジオに値をセットする。一般タブに'regex'を渡した場合は'partial'にフォールバックする。 */
+function setSelectedMatchType(tab: FormTab, matchType: MatchType): void {
+  const resolved: MatchType = tab === 'general' && matchType === 'regex' ? 'partial' : matchType;
+  const radios = tab === 'general' ? generalMatchRadios() : advancedMatchRadios();
+  for (const r of radios) r.checked = r.value === resolved;
+}
+
+/** アクティブなタブの入力欄から、登録・更新に使う値を取得する。 */
+function getActiveValue(): string {
+  return getActiveTab() === 'general' ? generalInput.value : regexInput.value;
+}
+
+/**
+ * タブ切替時、旧タブの値/一致方法を新タブへ引き継ぐ。
+ * 一般→上級者は一致方法をそのままコピー(exact/partial)。
+ * 上級者→一般は setSelectedMatchType のフォールバックにより regex が partial に変わる。
+ */
+function syncTabOnSwitch(from: FormTab, to: FormTab): void {
+  const value = from === 'general' ? generalInput.value : regexInput.value;
+  if (to === 'general') generalInput.value = value;
+  else regexInput.value = value;
+
+  setSelectedMatchType(to, getSelectedMatchTypeFor(from));
+}
+
+let lastActiveTab: FormTab = getActiveTab();
+
+[tabGeneral, tabAdvanced].forEach((el) => {
+  el.addEventListener('change', () => {
+    const next = getActiveTab();
+    if (next === lastActiveTab) return;
+    syncTabOnSwitch(lastActiveTab, next);
+    lastActiveTab = next;
+  });
+});
 
 /** 編集中のブロックルールID。null なら新規登録モード。 */
 let editingId: string | null = null;
