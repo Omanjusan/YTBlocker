@@ -6,10 +6,15 @@ import { setupMenuInjector } from './menu-injector';
 
 import type { BlockEntry } from '../shared/types';
 
+/** 現在のブロックルール一覧。storageから読み込んでキャッシュし、refresh() で読み直す。 */
 let blockEntries: BlockEntry[] = [];
+/** ショート動画を一括ブロックする設定の現在値。refresh() で読み直す。 */
 let blockShorts = false;
+/** 観測モード(youtubeUIアップデート時など未対応カード検出時の開発者追跡用隠しオプション)
+ * の現在値。storage.onChanged で即時反映する。 */
 let scoutMode = false;
 
+/** 観測モードが有効な場合のみ scoutScan を実行するラッパー。 */
 function scheduleScout(): void {
   if (scoutMode) scoutScan();
 }
@@ -26,6 +31,12 @@ async function refresh(): Promise<void> {
   applyAndLog();
 }
 
+/**
+ * コンテンツスクリプトの初期化処理。
+ * 設定読み込み→初回ブロック適用→三点メニュー注入のセットアップを行った後、
+ * storageの変更監視・DOM変化監視・YouTube側のSPAページ遷移(yt-navigate-finish)監視を
+ * それぞれ登録し、以降はイベント駆動でブロック適用/観測モードを回し続ける。
+ */
 (async () => {
   scoutMode = await getScoutModeEnabled();
   await refresh();
@@ -36,6 +47,8 @@ async function refresh(): Promise<void> {
   const lang = await getLanguage();
   setupMenuInjector(lang, async () => { await refresh(); });
 
+  // options.ts(別コンテキスト)側でのルール登録・設定変更をこのタブにも即時反映する。
+  // アクティブでないarea(sync/local切替前後の非対象側)からの変更は無視する。
   browser.storage.onChanged.addListener(async (changes, area) => {
     if (!(await isActiveArea(area))) return;
 
@@ -74,10 +87,14 @@ async function refresh(): Promise<void> {
 
     applyAndLog();
   });
+  // body配下全体を対象に監視開始。YouTubeはページ内のどこでカード一覧を差し替えるか
+  // 特定できないため、childList+subtreeでDOM全域を対象にする。
   domObserver.observe(document.body, { childList: true, subtree: true });
 
-  document.addEventListener('yt-navigate-finish', () => {
-    applyAndLog();
-    scheduleScout();
-  });
+  // 1.4.0コメントアウト: domObserver側だけでSPA遷移時のカード差し替えを
+  // 検知できるか実地テスト中。(YTBLOCKER_TEST_NAVIGATE_FINISH)
+  // document.addEventListener('yt-navigate-finish', () => {
+  //   applyAndLog();
+  //   scheduleScout();
+  // });
 })();

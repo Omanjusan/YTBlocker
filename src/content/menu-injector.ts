@@ -13,10 +13,15 @@ const MAX_INJECT_ATTEMPTS = 3;
 /** シートの高さ再適用を遅延実行するまでの時間。YouTube側の開閉アニメーション等の遅延上書きに追従するため即時・次フレームに続けて最後にもう一度適用する。 */
 const SHEET_RESIZE_DELAY_MS = 150;
 
+/** 三点メニューを開いた対象のカード。監視中のみ非null。 */
 let pendingCard: Element | null = null;
+/** WATCH_TIMEOUT_MS 経過で監視を打ち切るタイマー。 */
 let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
+/** POLL_INTERVAL_MS 間隔でtryInjectを再実行するポーリングタイマー。 */
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+/** listboxのDOM変化(ネイティブ項目構築・使い回しによる消去)を監視するオブザーバー。 */
 let menuObserver: MutationObserver | null = null;
+/** 消された項目を再注入した回数。MAX_INJECT_ATTEMPTSで打ち切る。 */
 let injectAttempts = 0;
 
 /** 三点メニュー監視の途中状態(監視中のカード・MutationObserver・ポーリング・タイムアウト)を全て破棄する。 */

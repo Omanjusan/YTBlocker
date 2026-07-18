@@ -6,6 +6,7 @@
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { buildWebExtPackage } = require('./webext-package');
 
 const ROOT = __dirname;
 const ARTIFACTS_DIR = path.join(ROOT, 'web-ext-artifacts');
@@ -38,7 +39,7 @@ console.log('[1/3] build');
 run('npm', ['run', 'build']);
 
 console.log('[2/3] package (web-ext build)');
-run('npx', ['web-ext', 'build', '--source-dir=.', '--artifacts-dir=web-ext-artifacts', '--overwrite-dest']);
+buildWebExtPackage();
 
 console.log('[3/3] source zip');
 fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });

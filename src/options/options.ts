@@ -39,6 +39,7 @@ for (const { code, label } of LANGS) {
   langSelect.appendChild(opt);
 }
 
+/** 表示言語を切り替え、静的文言(data-i18n)と動的描画部分(一覧・ログ・判定表示)を全て再適用する。 */
 async function applyLanguage(lang: Lang): Promise<void> {
   currentLang = lang;
   langSelect.value = lang;
@@ -64,6 +65,7 @@ let usageAtCapacity = false;
 
 // ---- NG登録容量ゲージ ----
 
+/** usedBytes を元に容量ゲージの表示(%・警告色)を更新し、容量到達フラグ(usageAtCapacity)も併せて再計算する。 */
 function renderUsage(): void {
   const percent = Math.min(100, Math.round((usedBytes / SYNC_TOTAL_BUDGET) * 100));
   usageAtCapacity = percent >= 100;
@@ -138,13 +140,14 @@ logDisabledCheckbox.addEventListener('change', async () => {
 
 // ---- リアルタイムマッチ判定 ----
 
-/** サンプル入力欄がパターン欄の正規表現にマッチするかをリアルタイムで判定し、適合/不適合で表示する。 */
+/** updateMatchIndicatorから呼び出されるprivate */
 function setMatchState(ok: boolean): void {
   matchIndicator.classList.toggle('match-ok', ok);
   matchIndicator.classList.toggle('match-ng', !ok);
   matchIndicator.textContent = t(ok ? 'match.ok' : 'match.ng', currentLang);
 }
 
+/** サンプル入力欄がパターン欄の正規表現にマッチするかをリアルタイムで判定し、適合/不適合で表示する。 */
 function updateMatchIndicator(): void {
   const pattern = regexInput.value;
   const sample  = sampleInput.value;
@@ -165,6 +168,7 @@ sampleInput.addEventListener('input', updateMatchIndicator);
 
 // ---- 登録・編集 ----
 
+/** フォームのラジオボタンから現在選択中の適用対象(video/channel/both)を取得する。 */
 function getSelectedTarget(): MatchTarget {
   return (document.querySelector('input[name="target"]:checked') as HTMLInputElement).value as MatchTarget;
 }
@@ -194,6 +198,7 @@ document.querySelectorAll<HTMLInputElement>('input[name="target"]').forEach((el)
   el.addEventListener('change', updateByteBudget);
 });
 
+/** 指定した適用対象(video/channel/both)に対応するラジオボタンを選択状態にする。 */
 function setSelectedTarget(target: MatchTarget): void {
   const radio = document.querySelector<HTMLInputElement>(`input[name="target"][value="${target}"]`);
   if (radio) radio.checked = true;
@@ -258,12 +263,14 @@ btnSubmit.addEventListener('click', handleSubmit);
 
 // ---- ルールリスト描画 ----
 
+/** ルールの適用対象(video/channel/both)を表示言語のラベル文字列に変換する。 */
 function targetLabel(entry: BlockEntry): string {
   if (entry.target === 'video')   return t('target.video', currentLang);
   if (entry.target === 'channel') return t('target.channel', currentLang);
   return t('target.both', currentLang);
 }
 
+/** ルールの適用対象(video/channel/both)を一覧のバッジ用CSSクラス名に変換する。 */
 function targetBadgeClass(entry: BlockEntry): string {
   if (entry.target === 'video')   return 'badge-video';
   if (entry.target === 'channel') return 'badge-channel';

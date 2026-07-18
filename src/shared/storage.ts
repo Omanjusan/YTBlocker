@@ -25,11 +25,13 @@ const DUMMY_CREATED_AT = 1700000000000;
 /** ルール1件の保存形式。オブジェクトではなくタプルにしてキー名分のバイトを節約する。 [id, code, value, createdAt] */
 type StoredEntry = [string, number, string, number];
 
+/** ルール本体とは別枠で1キーにまとめて保存する設定項目。 */
 interface Settings {
   blockShorts: boolean;
   scoutMode: boolean;
 }
 
+/** 未保存時に使う設定の初期値。 */
 const DEFAULT_SETTINGS: Settings = { blockShorts: false, scoutMode: false };
 
 /** 同期無効化フラグ。sync/localどちらを見るかの判定材料になるため、常にlocalに置く。 */
@@ -41,6 +43,7 @@ export async function isSyncEnabled(): Promise<boolean> {
   return (result[SYNC_ENABLED_KEY] as boolean | undefined) ?? true;
 }
 
+/** 同期無効化フラグを直接書き換える。ルール/設定の実データ移行は行わないため、切替には switchSyncArea を使う。 */
 export async function setSyncEnabled(enabled: boolean): Promise<void> {
   await browser.storage.local.set({ [SYNC_ENABLED_KEY]: enabled });
 }
@@ -95,6 +98,7 @@ function encodeCode(target: MatchTarget, matchType: MatchType): number {
   return targetCode * 10 + matchCode;
 }
 
+/** encodeCode で合成した数値を target/matchType に戻す。10の位がtargetCode、1の位がmatchCode。 */
 function decodeCode(code: number): { target: MatchTarget; matchType: MatchType } {
   const targetCode = Math.floor(code / 10);
   const matchCode  = code % 10;
@@ -103,10 +107,12 @@ function decodeCode(code: number): { target: MatchTarget; matchType: MatchType }
   return { target, matchType };
 }
 
+/** BlockEntry を保存用タプル(StoredEntry)に変換する。 */
 function toStored(entry: BlockEntry): StoredEntry {
   return [entry.id, encodeCode(entry.target, entry.matchType), entry.value, entry.createdAt];
 }
 
+/** 保存用タプル(StoredEntry)を BlockEntry に戻す。 */
 function fromStored(stored: StoredEntry): BlockEntry {
   const [id, code, value, createdAt] = stored;
   return { id, value, createdAt, ...decodeCode(code) };
@@ -129,10 +135,12 @@ export async function getUsageBytes(): Promise<number> {
   return Object.entries(all).reduce((sum, [key, value]) => sum + itemByteSize(key, value), 0);
 }
 
+/** チャンク番号からstorageキー名を組み立てる(例: index=0 なら "ytblocker_rules_0")。 */
 function chunkKey(index: number): string {
   return `${STORAGE_KEYS.rulesPrefix}${index}`;
 }
 
+/** ルール1チャンク分。key/indexは同じチャンクキーを指し(index=Number(keyのプレフィックス除去分))、entriesがその中身。 */
 interface Chunk {
   key: string;
   index: number;
@@ -257,15 +265,18 @@ export async function isLogDisabled(): Promise<boolean> {
   return (result[STORAGE_KEYS.logDisabled] as boolean | undefined) ?? false;
 }
 
+/** isLogDisabled と対。 */
 export async function setLogDisabled(disabled: boolean): Promise<void> {
   await browser.storage.local.set({ [STORAGE_KEYS.logDisabled]: disabled });
 }
 
+/** 現在のarea(sync/local)からSettingsを読み出す。未保存項目はDEFAULT_SETTINGSで補完する。 */
 async function getSettings(): Promise<Settings> {
   const result = await (await getArea()).get(STORAGE_KEYS.settings);
   return { ...DEFAULT_SETTINGS, ...(result[STORAGE_KEYS.settings] as Partial<Settings> | undefined) };
 }
 
+/** Settingsの一部を現在のareaへ差分反映する(既存値とマージして丸ごと上書き)。 */
 async function setSettings(patch: Partial<Settings>): Promise<void> {
   const current = await getSettings();
   await (await getArea()).set({ [STORAGE_KEYS.settings]: { ...current, ...patch } });
@@ -276,6 +287,7 @@ export async function getBlockShortsEnabled(): Promise<boolean> {
   return (await getSettings()).blockShorts;
 }
 
+/** getBlockShortsEnabled と対。 */
 export async function setBlockShortsEnabled(enabled: boolean): Promise<void> {
   await setSettings({ blockShorts: enabled });
 }
@@ -285,6 +297,7 @@ export async function getScoutModeEnabled(): Promise<boolean> {
   return (await getSettings()).scoutMode;
 }
 
+/** getScoutModeEnabled と対。 */
 export async function setScoutModeEnabled(enabled: boolean): Promise<void> {
   await setSettings({ scoutMode: enabled });
 }

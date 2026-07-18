@@ -6,7 +6,7 @@
     "build": "node build.js",
     "watch": "node build.js --watch",
     "experiment": "web-ext run --source-dir=. --firefox-binary=flatpak:org.mozilla.firefox --firefox-profile=develop --keep-profile-changes",
-    "package": "web-ext build --source-dir=. --artifacts-dir=web-ext-artifacts --overwrite-dest",
+    "package": "node webext-package.js",
     "release": "node release.js"
   },
   "devDependencies": {

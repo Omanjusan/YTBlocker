@@ -235,6 +235,7 @@ export async function getLanguage(): Promise<Lang> {
   return detectBrowserLang();
 }
 
+/** ユーザーが選択した表示言語を storage.local に保存する。以降の getLanguage はこの値を優先する。 */
 export async function setLanguage(lang: Lang): Promise<void> {
   await browser.storage.local.set({ [LANG_STORAGE_KEY]: lang });
 }

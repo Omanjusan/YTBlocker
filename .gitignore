@@ -4,3 +4,4 @@ dist/
 .env
 web-ext-artifacts/
 .amo-upload-uuid
+.web-ext-staging/
