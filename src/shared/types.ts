@@ -1,7 +1,7 @@
 /** ブロックルールの適用対象。'both' は動画タイトル・チャンネル名のどちらか一致すればブロック。 */
 export type MatchTarget = 'video' | 'channel' | 'both';
-/** 'exact' は完全一致、'regex' は正規表現マッチ(`/pattern/flags` 形式にも対応)。 */
-export type MatchType = 'exact' | 'regex';
+/** 'exact' は完全一致、'partial' は部分一致、'regex' は正規表現マッチ(`/pattern/flags` 形式にも対応)。 */
+export type MatchType = 'exact' | 'partial' | 'regex';
 
 /** ユーザーが登録したブロックルール1件分。 */
 export interface BlockEntry {
