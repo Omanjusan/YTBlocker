@@ -91,37 +91,37 @@ function byteLength(value: unknown): number {
   return encoder.encode(JSON.stringify(value)).length;
 }
 
-/** target(1/2/3)とmatchType(0=exact/1=regex)を1つの数値に合成してタプルのフィールド数を減らす。 */
-function encodeCode(target: MatchTarget, matchType: MatchType): number {
+/** target(1/2/3)とmatchType(0=exact/1=partial/2=regex)を1つの数値に合成してタプルのフィールド数を減らす。 */
+function packTargetMatch(target: MatchTarget, matchType: MatchType): number {
   const targetCode = target === 'video' ? 1 : target === 'channel' ? 2 : 3;
-  const matchCode  = matchType === 'exact' ? 0 : 1;
+  const matchCode  = matchType === 'exact' ? 0 : matchType === 'partial' ? 1 : 2;
   return targetCode * 10 + matchCode;
 }
 
-/** encodeCode で合成した数値を target/matchType に戻す。10の位がtargetCode、1の位がmatchCode。 */
-function decodeCode(code: number): { target: MatchTarget; matchType: MatchType } {
+/** packTargetMatch で合成した数値を target/matchType に戻す。10の位がtargetCode、1の位がmatchCode。 */
+function unpackTargetMatch(code: number): { target: MatchTarget; matchType: MatchType } {
   const targetCode = Math.floor(code / 10);
   const matchCode  = code % 10;
   const target: MatchTarget = targetCode === 1 ? 'video' : targetCode === 2 ? 'channel' : 'both';
-  const matchType: MatchType = matchCode === 0 ? 'exact' : 'regex';
+  const matchType: MatchType = matchCode === 0 ? 'exact' : matchCode === 1 ? 'partial' : 'regex';
   return { target, matchType };
 }
 
 /** BlockEntry を保存用タプル(StoredEntry)に変換する。 */
 function toStored(entry: BlockEntry): StoredEntry {
-  return [entry.id, encodeCode(entry.target, entry.matchType), entry.value, entry.createdAt];
+  return [entry.id, packTargetMatch(entry.target, entry.matchType), entry.value, entry.createdAt];
 }
 
 /** 保存用タプル(StoredEntry)を BlockEntry に戻す。 */
 function fromStored(stored: StoredEntry): BlockEntry {
   const [id, code, value, createdAt] = stored;
-  return { id, value, createdAt, ...decodeCode(code) };
+  return { id, value, createdAt, ...unpackTargetMatch(code) };
 }
 
 /** フォーム入力中の target/matchType/value からルール1件の保存バイト数を見積もる(id/createdAtはダミー固定値)。
  * addEntryの単独チャンク判定(byteLength([stored]))と一致するよう、配列で包んだサイズで測る。 */
 export function estimateEntryBytes(target: MatchTarget, matchType: MatchType, value: string): number {
-  const stored: StoredEntry = [DUMMY_ID, encodeCode(target, matchType), value, DUMMY_CREATED_AT];
+  const stored: StoredEntry = [DUMMY_ID, packTargetMatch(target, matchType), value, DUMMY_CREATED_AT];
   return byteLength([stored]);
 }
 
