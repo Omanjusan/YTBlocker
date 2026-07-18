@@ -325,22 +325,26 @@ btnCancel.addEventListener('click', exitEditMode);
 /** フォームの内容で新規登録、または編集中のルールを更新する。 */
 async function handleSubmit(): Promise<void> {
   if (btnSubmit.disabled) return;
-  const raw = regexInput.value.trim();
+  // 値・一致方法とも、現在アクティブなタブ側の入力欄/ラジオを見る
+  const raw = getActiveValue().trim();
   if (!raw) return;
   const target = getSelectedTarget();
+  const matchType = getSelectedMatchType();
 
   if (editingId) {
-    await updateEntry(editingId, { target, value: raw });
+    await updateEntry(editingId, { target, value: raw, matchType });
     exitEditMode();
   } else {
     const entry: BlockEntry = {
       id: generateId(),
       target,
-      matchType: 'regex',
+      matchType,
       value: raw,
       createdAt: Date.now(),
     };
     await addEntry(entry);
+    // 値はタブ間で共有しているため、登録後は両方の入力欄をクリアする
+    generalInput.value = '';
     regexInput.value = '';
     sampleInput.value = '';
     updateMatchIndicator();
