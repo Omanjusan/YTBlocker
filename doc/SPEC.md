@@ -17,7 +17,6 @@ src/
 │   ├── card-scout.ts     観測モード（未対応カード検出ロガー）
 │   ├── toast.ts          ブロック直後の通知トースト
 │   └── content.ts        エントリポイント（監視・再適用の統括）
-├── popup/popup.ts       ツールバーアイコンのポップアップ
 ├── options/options.ts   設定ページ（ルール管理・ログ閲覧）
 └── background/background.ts  ツールバーアイコンのクリックでオプションページを開く
 ```
@@ -30,7 +29,6 @@ content.ts ─┬─> blocker.ts ─┬─> shared/storage.ts ─> shared/types.
             ├─> menu-injector.ts ─> blocker.ts, shared/debug.ts, shared/i18n.ts
             └─> card-scout.ts ─> blocker.ts
 
-popup.ts       ──> shared/storage.ts, shared/i18n.ts
 options.ts     ──> shared/storage.ts, shared/types.ts, shared/i18n.ts
 background.ts  ──> (browser API のみ)
 ```
