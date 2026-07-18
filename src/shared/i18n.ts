@@ -192,6 +192,7 @@ const messages: Record<string, Dict> = {
   'rules.empty':      { ja: 'ルールがありません', en: 'No rules yet', de: 'Keine Regeln vorhanden', it: 'Nessuna regola presente', fr: 'Aucune règle enregistrée', ko: '등록된 규칙이 없습니다', 'zh-CN': '暂无规则', 'zh-TW': '尚無規則' },
   'matchType.regex':  { ja: '正規表現', en: 'Regex', de: 'Regex', it: 'Regex', fr: 'Regex', ko: '정규식', 'zh-CN': '正则表达式', 'zh-TW': '正規表示式' },
   'matchType.exact':  { ja: '完全一致', en: 'Exact match', de: 'Exakte Übereinstimmung', it: 'Corrispondenza esatta', fr: 'Correspondance exacte', ko: '완전 일치', 'zh-CN': '完全匹配', 'zh-TW': '完全符合' },
+  'matchType.partial': { ja: '部分一致', en: 'Partial match', de: 'Teilweise Übereinstimmung', it: 'Corrispondenza parziale', fr: 'Correspondance partielle', ko: '부분 일치', 'zh-CN': '部分匹配', 'zh-TW': '部分符合' },
   'btn.edit':         { ja: '編集', en: 'Edit', de: 'Bearbeiten', it: 'Modifica', fr: 'Modifier', ko: '편집', 'zh-CN': '编辑', 'zh-TW': '編輯' },
   'btn.delete':       { ja: '削除', en: 'Delete', de: 'Löschen', it: 'Elimina', fr: 'Supprimer', ko: '삭제', 'zh-CN': '删除', 'zh-TW': '刪除' },
   'log.title':        { ja: 'ブロックログ（直近50件）', en: 'Block log (last 50)', de: 'Sperrprotokoll (letzte 50)', it: 'Registro dei blocchi (ultimi 50)', fr: 'Journal des blocages (50 derniers)', ko: '차단 로그(최근 50건)', 'zh-CN': '屏蔽日志（最近 50 条）', 'zh-TW': '封鎖紀錄（最近 50 筆）' },
