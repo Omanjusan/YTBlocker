@@ -201,15 +201,43 @@
       font-family: 'Consolas', 'Courier New', monospace;
     }
 
-    /* 適用対象ラジオ */
-    fieldset.target-group {
+    /* タブ切替(一般ルール/上級者ルール) */
+    .tab-shell input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+    .tab-nav { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid #eee; }
+    .tab-nav label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 16px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #606060;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      user-select: none;
+    }
+    .tab-nav label .tab-desc { font-size: 11px; font-weight: 400; color: #888; }
+    .tab-nav label:hover { color: #0f0f0f; }
+    .tab-shell:has(#tab-general:checked) .tab-nav label[for="tab-general"],
+    .tab-shell:has(#tab-advanced:checked) .tab-nav label[for="tab-advanced"] {
+      color: #065fd4;
+      border-bottom-color: #065fd4;
+    }
+    .panel { display: none; }
+    .tab-shell:has(#tab-general:checked) .panel-general { display: block; }
+    .tab-shell:has(#tab-advanced:checked) .panel-advanced { display: block; }
+
+    /* 一致方法・適用対象などのピル型ラジオ選択 */
+    fieldset.choice-group {
       border: none;
       display: flex;
-      gap: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-bottom: 14px;
     }
-    fieldset.target-group legend { font-size: 12px; font-weight: 600; color: #606060; margin-bottom: 8px; padding: 0; }
-    .target-option {
+    fieldset.choice-group legend { font-size: 12px; font-weight: 600; color: #606060; margin-bottom: 8px; padding: 0; }
+    .choice-option {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -221,10 +249,13 @@
       font-weight: 600;
       color: #606060;
     }
-    .target-option input { accent-color: currentColor; cursor: pointer; }
-    .target-option:has(input:checked)[data-target="video"]   { border-color: #065fd4; color: #065fd4; background: #e3efff; }
-    .target-option:has(input:checked)[data-target="channel"] { border-color: #107516; color: #107516; background: #e6f4e7; }
-    .target-option:has(input:checked)[data-target="both"]    { border-color: #6a1b9a; color: #6a1b9a; background: #f3e5f5; }
+    .choice-option input { accent-color: currentColor; cursor: pointer; }
+    .choice-option:has(input:checked)[data-c="video"]   { border-color: #065fd4; color: #065fd4; background: #e3efff; }
+    .choice-option:has(input:checked)[data-c="channel"] { border-color: #107516; color: #107516; background: #e6f4e7; }
+    .choice-option:has(input:checked)[data-c="both"]    { border-color: #6a1b9a; color: #6a1b9a; background: #f3e5f5; }
+    .choice-option:has(input:checked)[data-c="exact"]   { border-color: #546e7a; color: #546e7a; background: #eceff1; }
+    .choice-option:has(input:checked)[data-c="partial"] { border-color: #00897b; color: #00897b; background: #e0f2f1; }
+    .choice-option:has(input:checked)[data-c="regex"]   { border-color: #e65100; color: #e65100; background: #fff3e0; }
 
     /* 登録ボタン */
     .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -267,6 +298,8 @@
     .badge-video    { background: #e3efff; color: #065fd4; }
     .badge-channel  { background: #e6f4e7; color: #107516; }
     .badge-both     { background: #f3e5f5; color: #6a1b9a; }
+    .badge-exact    { background: #eceff1; color: #546e7a; }
+    .badge-partial  { background: #e0f2f1; color: #00897b; }
     .badge-regex    { background: #fff3e0; color: #e65100; }
     .entry-value {
       flex: 1;
@@ -378,10 +411,10 @@
       </div>
     </section>
 
-    <!-- 正規表現ルール追加カード -->
+    <!-- ブロックルール追加カード -->
     <section class="card" id="form-card">
       <div class="card-head">
-        <h2 data-i18n="form.title">ブロックルールを追加（正規表現）</h2>
+        <h2 data-i18n="form.title">ブロックルールを追加</h2>
         <div class="card-head-right">
           <span class="edit-tag" data-i18n="form.editTag">✎ 編集中</span>
           <span class="usage-row">
@@ -391,55 +424,106 @@
         </div>
       </div>
 
-      <div class="field field-test">
-        <label for="sample-input" data-i18n="form.sampleLabel">テスト用サンプル文字列（保存されません・動画タイトルまたはチャンネル名）　例 test ch</label>
-        <input id="sample-input" type="text" />
-      </div>
+      <div class="tab-shell">
+        <input type="radio" name="form-tab" id="tab-general" checked />
+        <input type="radio" name="form-tab" id="tab-advanced" />
+        <nav class="tab-nav">
+          <label for="tab-general">
+            <span data-i18n="tab.general.label">一般ルール</span>
+            <span class="tab-desc" data-i18n="tab.general.desc">文字列で簡単登録</span>
+          </label>
+          <label for="tab-advanced">
+            <span data-i18n="tab.advanced.label">上級者ルール</span>
+            <span class="tab-desc" data-i18n="tab.advanced.desc">正規表現も使える</span>
+          </label>
+        </nav>
 
-      <div class="field">
-        <label for="regex-input" data-i18n="form.regexLabel">登録する正規表現パターン（これが保存されます）　例 aaaa|bbbb</label>
-        <p class="field-note" data-i18n="form.matchNote">サンプル文字列との判定結果は下の行頭に表示されます。サンプル文字列が空なら常に「不適合」表示</p>
-        <div class="regex-row">
-          <input id="regex-input" type="text" />
+        <!-- 一般ルール -->
+        <div class="panel panel-general">
+          <div class="field">
+            <label for="general-input" data-i18n="form.generalLabel">登録する文字列（動画タイトルまたはチャンネル名）</label>
+            <input id="general-input" type="text" />
+          </div>
+          <p class="field-note" id="budget-text-general"></p>
+
+          <fieldset class="choice-group">
+            <legend data-i18n="matchType.legend">一致方法</legend>
+            <label class="choice-option" data-c="exact">
+              <input type="radio" name="match-general" value="exact" checked /><span data-i18n="matchType.exact">完全一致</span>
+            </label>
+            <label class="choice-option" data-c="partial">
+              <input type="radio" name="match-general" value="partial" /><span data-i18n="matchType.partial">部分一致</span>
+            </label>
+          </fieldset>
         </div>
-        <p class="field-note" id="byte-budget">
-          <span data-i18n="match.compareLabel">サンプル文字列との比較：</span><span id="match-indicator" class="match-ng" data-i18n="match.ng">✗ 不適合</span>
-          <span>　／　</span><span id="budget-text"></span>
-        </p>
-      </div>
 
-      <fieldset class="target-group">
-        <legend data-i18n="target.legend">適用対象</legend>
-        <label class="target-option" data-target="video">
-          <input type="radio" name="target" value="video" checked /><span data-i18n="target.video">動画</span>
-        </label>
-        <label class="target-option" data-target="channel">
-          <input type="radio" name="target" value="channel" /><span data-i18n="target.channel">チャンネル</span>
-        </label>
-        <label class="target-option" data-target="both">
-          <input type="radio" name="target" value="both" /><span data-i18n="target.both">両方</span>
-        </label>
-      </fieldset>
+        <!-- 上級者ルール -->
+        <div class="panel panel-advanced">
+          <div class="field field-test">
+            <label for="sample-input" data-i18n="form.sampleLabel">テスト用サンプル文字列（保存されません・動画タイトルまたはチャンネル名）　例 test ch</label>
+            <input id="sample-input" type="text" />
+          </div>
 
-      <div class="manual">
-        <code>^</code> <span data-i18n="manual.start">先頭</span> &nbsp;
-        <code>$</code> <span data-i18n="manual.end">末尾</span> &nbsp;
-        <code>.</code> <span data-i18n="manual.anyChar">任意の1文字</span> &nbsp;
-        <code>*</code> <span data-i18n="manual.zeroOrMore">0回以上</span> &nbsp;
-        <code>+</code> <span data-i18n="manual.oneOrMore">1回以上</span> &nbsp;
-        <code>?</code> <span data-i18n="manual.zeroOrOne">0または1回</span><br>
-        <code>[abc]</code> <span data-i18n="manual.anyOf">a・b・cのいずれか</span> &nbsp;
-        <code>[^abc]</code> <span data-i18n="manual.noneOf">a・b・c以外</span> &nbsp;
-        <code>(a|b)</code> <span data-i18n="manual.or">aまたはb</span><br>
-        <code>\d</code> <span data-i18n="manual.digit">数字</span> &nbsp;
-        <code>\w</code> <span data-i18n="manual.word">単語文字</span> &nbsp;
-        <code>\s</code> <span data-i18n="manual.space">空白</span> &nbsp;
-        <code>i</code><span data-i18n="manual.iFlag">フラグ（末尾に /i）: 大文字小文字を無視</span>
-      </div>
+          <div class="field">
+            <label for="regex-input" data-i18n="form.regexLabel">登録する正規表現パターン（これが保存されます）　例 aaaa|bbbb</label>
+            <p class="field-note" data-i18n="form.matchNote">サンプル文字列との判定結果は下の行頭に表示されます。サンプル文字列が空なら常に「不適合」表示</p>
+            <div class="regex-row">
+              <input id="regex-input" type="text" />
+            </div>
+            <p class="field-note" id="byte-budget">
+              <span data-i18n="match.compareLabel">サンプル文字列との比較：</span><span id="match-indicator" class="match-ng" data-i18n="match.ng">✗ 不適合</span>
+              <span>　／　</span><span id="budget-text"></span>
+            </p>
+          </div>
 
-      <div class="btn-group">
-        <button class="btn btn-submit" id="btn-submit" data-i18n="btn.submit">登録</button>
-        <button class="btn btn-cancel" id="btn-cancel" data-i18n="btn.cancelEdit">編集をキャンセル</button>
+          <div class="manual">
+            <code>^</code> <span data-i18n="manual.start">先頭</span> &nbsp;
+            <code>$</code> <span data-i18n="manual.end">末尾</span> &nbsp;
+            <code>.</code> <span data-i18n="manual.anyChar">任意の1文字</span> &nbsp;
+            <code>*</code> <span data-i18n="manual.zeroOrMore">0回以上</span> &nbsp;
+            <code>+</code> <span data-i18n="manual.oneOrMore">1回以上</span> &nbsp;
+            <code>?</code> <span data-i18n="manual.zeroOrOne">0または1回</span><br>
+            <code>[abc]</code> <span data-i18n="manual.anyOf">a・b・cのいずれか</span> &nbsp;
+            <code>[^abc]</code> <span data-i18n="manual.noneOf">a・b・c以外</span> &nbsp;
+            <code>(a|b)</code> <span data-i18n="manual.or">aまたはb</span><br>
+            <code>\d</code> <span data-i18n="manual.digit">数字</span> &nbsp;
+            <code>\w</code> <span data-i18n="manual.word">単語文字</span> &nbsp;
+            <code>\s</code> <span data-i18n="manual.space">空白</span> &nbsp;
+            <code>i</code><span data-i18n="manual.iFlag">フラグ（末尾に /i）: 大文字小文字を無視</span>
+          </div>
+
+          <fieldset class="choice-group">
+            <legend data-i18n="matchType.legend">一致方法</legend>
+            <label class="choice-option" data-c="exact">
+              <input type="radio" name="match-advanced" value="exact" /><span data-i18n="matchType.exact">完全一致</span>
+            </label>
+            <label class="choice-option" data-c="partial">
+              <input type="radio" name="match-advanced" value="partial" /><span data-i18n="matchType.partial">部分一致</span>
+            </label>
+            <label class="choice-option" data-c="regex">
+              <input type="radio" name="match-advanced" value="regex" checked /><span data-i18n="matchType.regex">正規表現</span>
+            </label>
+          </fieldset>
+          <p class="field-note" data-i18n="form.matchTypeNote">完全一致、部分一致では正規表現表記は純粋な比較文字列として扱われます</p>
+        </div>
+
+        <fieldset class="choice-group">
+          <legend data-i18n="target.legend">適用対象</legend>
+          <label class="choice-option" data-c="video">
+            <input type="radio" name="target" value="video" checked /><span data-i18n="target.video">動画</span>
+          </label>
+          <label class="choice-option" data-c="channel">
+            <input type="radio" name="target" value="channel" /><span data-i18n="target.channel">チャンネル</span>
+          </label>
+          <label class="choice-option" data-c="both">
+            <input type="radio" name="target" value="both" /><span data-i18n="target.both">両方</span>
+          </label>
+        </fieldset>
+
+        <div class="btn-group">
+          <button class="btn btn-submit" id="btn-submit" data-i18n="btn.submit">登録</button>
+          <button class="btn btn-cancel" id="btn-cancel" data-i18n="btn.cancelEdit">編集をキャンセル</button>
+        </div>
       </div>
     </section>
 
