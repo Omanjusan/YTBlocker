@@ -105,7 +105,7 @@ const messages: Record<string, Dict> = {
     'zh-CN': '与示例文本的比对结果显示在下方行首。示例文本为空时始终显示"不匹配"',
     'zh-TW': '與範例文字的比對結果顯示在下方行首。範例文字為空時一律顯示「不符合」',
   },
-  'match.ok': {
+  'match.ok': {GO
     ja: '✓ 適合', en: '✓ Match', de: '✓ Treffer', it: '✓ Corrisponde',
     fr: '✓ Correspond', ko: '✓ 일치', 'zh-CN': '✓ 匹配', 'zh-TW': '✓ 符合',
   },
@@ -210,11 +210,23 @@ export function t(key: string, lang: Lang, vars?: Record<string, string | number
   return raw.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''));
 }
 
-/** 選択言語を storage.local から取得する。未保存または不正値なら日本語。 */
+/** ブラウザのUI言語(例: "ja", "en-US", "zh-CN")を対応言語にマッピングする。非対応言語はDEFAULT_LANG。 */
+function detectBrowserLang(): Lang {
+  const uiLang = browser.i18n.getUILanguage().toLowerCase();
+  if (uiLang.startsWith('zh')) {
+    return uiLang.includes('tw') || uiLang.includes('hant') ? 'zh-TW' : 'zh-CN';
+  }
+  const primary = uiLang.split('-')[0];
+  const match = LANGS.find((l) => l.code.toLowerCase() === primary);
+  return match ? match.code : DEFAULT_LANG;
+}
+
+/** 選択言語を storage.local から取得する。未保存ならブラウザのUI言語から推定し、非対応言語または不正値なら日本語。 */
 export async function getLanguage(): Promise<Lang> {
   const result = await browser.storage.local.get(LANG_STORAGE_KEY);
   const stored = result[LANG_STORAGE_KEY] as Lang | undefined;
-  return LANGS.some((l) => l.code === stored) ? (stored as Lang) : DEFAULT_LANG;
+  if (LANGS.some((l) => l.code === stored)) return stored as Lang;
+  return detectBrowserLang();
 }
 
 export async function setLanguage(lang: Lang): Promise<void> {
