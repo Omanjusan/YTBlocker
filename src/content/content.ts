@@ -34,8 +34,10 @@ async function refresh(): Promise<void> {
 /**
  * コンテンツスクリプトの初期化処理。
  * 設定読み込み→初回ブロック適用→三点メニュー注入のセットアップを行った後、
- * storageの変更監視・DOM変化監視・YouTube側のSPAページ遷移(yt-navigate-finish)監視を
- * それぞれ登録し、以降はイベント駆動でブロック適用/観測モードを回し続ける。
+ * storageの変更監視・DOM変化監視をそれぞれ登録し、以降はイベント駆動で
+ * ブロック適用/観測モードを回し続ける。
+ * (YouTube側のSPAページ遷移(yt-navigate-finish)監視は、DOM変化監視単独で代替できるか
+ * 実地検証中のため一時コメントアウト中: YTBLOCKER_TEST_NAVIGATE_FINISH)
  */
 (async () => {
   scoutMode = await getScoutModeEnabled();
