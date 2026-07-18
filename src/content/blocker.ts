@@ -167,7 +167,8 @@ function entryMatches(value: string, entry: BlockEntry): boolean {
 /**
  * 現在DOM上にある全カードにブロックルールを適用し、マッチしたものを削除する。
  * ショート一括ブロックが有効な場合はルールに関わらずショートを先に除去する。
- * @returns 実際にブロックされた項目のログ配列(呼び出し側で storage に保存する)。
+ * @returns ルールにマッチしてブロックされた項目のログ配列(呼び出し側で storage に保存する)。
+ *          ショート一括ブロックで除去した分はログに含めない。
  */
 export function applyBlockList(entries: BlockEntry[], blockShorts: boolean): BlockLog[] {
   const logged: BlockLog[] = [];

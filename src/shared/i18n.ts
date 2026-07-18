@@ -224,7 +224,7 @@ function detectBrowserLang(): Lang {
   return match ? match.code : DEFAULT_LANG;
 }
 
-/** 選択言語を storage.local から取得する。未保存ならブラウザのUI言語から推定し、非対応言語または不正値なら日本語。 */
+/** 選択言語を storage.local から取得する。未保存または不正値ならブラウザのUI言語から推定する(推定先が非対応言語なら日本語)。 */
 export async function getLanguage(): Promise<Lang> {
   const result = await browser.storage.local.get(LANG_STORAGE_KEY);
   const stored = result[LANG_STORAGE_KEY] as Lang | undefined;

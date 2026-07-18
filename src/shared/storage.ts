@@ -1,6 +1,7 @@
 import type { BlockEntry, BlockLog, MatchTarget, MatchType } from './types';
 
-/** browser.storage で使う各設定項目のキー名。文字列の再入力によるタイポを防ぐため一箇所に集約。 */
+/** browser.storage で使う各設定項目のキー名。文字列の再入力によるタイポを防ぐため一箇所に集約。
+ * 例外: 同期フラグ(SYNC_ENABLED_KEY)はarea判定の都合で本ファイル内に、言語設定(LANG_STORAGE_KEY)はi18n.tsに別置き。 */
 export const STORAGE_KEYS = {
   rulesPrefix: 'ytblocker_rules_',
   settings: 'ytblocker_settings',
@@ -173,7 +174,7 @@ export async function getEntries(): Promise<BlockEntry[]> {
 
 /**
  * ブロックルールを1件追加する。
- * 既存チャンクを番号順に見て、追加後も8KB以内に収まる最初のチャンクへ追記する。
+ * 既存チャンクを番号順に見て、追加後もCHUNK_BYTE_LIMIT(7800byte)以内に収まる最初のチャンクへ追記する。
  * どのチャンクにも収まらなければ新しいチャンクキーを作る。
  */
 export async function addEntry(entry: BlockEntry): Promise<void> {
