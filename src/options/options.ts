@@ -295,25 +295,44 @@ function setSelectedTarget(target: MatchTarget): void {
   if (radio) radio.checked = true;
 }
 
-/** 指定エントリの内容をフォームへ流し込み、編集モードへ切り替える。 */
+/**
+ * 指定エントリの内容をフォームへ流し込み、編集モードへ切り替える。
+ * matchTypeがregexなら上級者タブ、exact/partialなら一般タブを自動で開く。
+ * 値は両タブの入力欄に同じものを入れておき、編集中にタブを行き来しても引き継がれるようにする。
+ */
 function enterEditMode(entry: BlockEntry): void {
   editingId = entry.id;
+  generalInput.value = entry.value;
   regexInput.value = entry.value;
   sampleInput.value = '';
   setSelectedTarget(entry.target);
+
+  const tab: FormTab = entry.matchType === 'regex' ? 'advanced' : 'general';
+  setActiveTab(tab);
+  lastActiveTab = tab; // change イベント経由ではなく直接切り替えるため、同期用の状態も手動で合わせる
+  setSelectedMatchType('general', entry.matchType);
+  setSelectedMatchType('advanced', entry.matchType);
+
   updateMatchIndicator();
   updateByteBudget();
   formCard.classList.add('is-editing');
   btnSubmit.textContent = t('btn.update', currentLang);
-  regexInput.focus();
+  (tab === 'general' ? generalInput : regexInput).focus();
 }
 
-/** 編集モードを終了し、新規登録モードに戻す。 */
+/** 編集モードを終了し、新規登録モードに戻す(タブ・一致方法も初期状態=一般タブ/完全一致に戻す)。 */
 function exitEditMode(): void {
   editingId = null;
+  generalInput.value = '';
   regexInput.value = '';
   sampleInput.value = '';
   setSelectedTarget('video');
+
+  setActiveTab('general');
+  lastActiveTab = 'general';
+  setSelectedMatchType('general', 'exact');
+  setSelectedMatchType('advanced', 'regex');
+
   updateMatchIndicator();
   updateByteBudget();
   formCard.classList.remove('is-editing');
