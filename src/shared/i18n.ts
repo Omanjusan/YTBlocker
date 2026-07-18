@@ -74,12 +74,38 @@ const messages: Record<string, Dict> = {
     'zh-TW': '觀測模式（將不支援的卡片回報到控制台，通常為關閉）',
   },
   'form.title': {
-    ja: 'ブロックルールを追加（正規表現）', en: 'Add block rule (regex)', de: 'Sperrregel hinzufügen (Regex)', it: 'Aggiungi regola di blocco (regex)',
-    fr: 'Ajouter une règle de blocage (regex)', ko: '차단 규칙 추가(정규식)', 'zh-CN': '添加屏蔽规则（正则表达式）', 'zh-TW': '新增封鎖規則（正規表示式）',
+    ja: 'ブロックルールを追加', en: 'Add block rule', de: 'Sperrregel hinzufügen', it: 'Aggiungi regola di blocco',
+    fr: 'Ajouter une règle de blocage', ko: '차단 규칙 추가', 'zh-CN': '添加屏蔽规则', 'zh-TW': '新增封鎖規則',
+  },
+  'tab.general.label': {
+    ja: '一般ルール', en: 'General', de: 'Allgemein', it: 'Generale',
+    fr: 'Général', ko: '일반 규칙', 'zh-CN': '一般规则', 'zh-TW': '一般規則',
+  },
+  'tab.general.desc': {
+    ja: '文字列で簡単登録', en: 'Simple text match', de: 'Einfacher Textabgleich', it: 'Corrispondenza di testo semplice',
+    fr: 'Correspondance de texte simple', ko: '문자열로 간단히 등록', 'zh-CN': '用文本简单添加', 'zh-TW': '用文字簡單新增',
+  },
+  'tab.advanced.label': {
+    ja: '上級者ルール', en: 'Advanced', de: 'Erweitert', it: 'Avanzate',
+    fr: 'Avancé', ko: '고급 규칙', 'zh-CN': '高级规则', 'zh-TW': '進階規則',
+  },
+  'tab.advanced.desc': {
+    ja: '正規表現も使える', en: 'Regex also available', de: 'Regex ebenfalls möglich', it: 'Anche regex disponibile',
+    fr: 'Regex également disponible', ko: '정규식도 사용 가능', 'zh-CN': '也可使用正则表达式', 'zh-TW': '也可使用正規表示式',
   },
   'form.editTag': {
     ja: '✎ 編集中', en: '✎ Editing', de: '✎ Wird bearbeitet', it: '✎ In modifica',
     fr: '✎ Modification en cours', ko: '✎ 편집 중', 'zh-CN': '✎ 编辑中', 'zh-TW': '✎ 編輯中',
+  },
+  'form.generalLabel': {
+    ja: '登録する文字列（動画タイトルまたはチャンネル名）',
+    en: 'Text to register (video title or channel name)',
+    de: 'Zu registrierender Text (Videotitel oder Kanalname)',
+    it: 'Testo da registrare (titolo del video o nome del canale)',
+    fr: 'Texte à enregistrer (titre de la vidéo ou nom de la chaîne)',
+    ko: '등록할 문자열(동영상 제목 또는 채널명)',
+    'zh-CN': '要添加的文本（视频标题或频道名称）',
+    'zh-TW': '要新增的文字（影片標題或頻道名稱）',
   },
   'form.sampleLabel': {
     ja: 'テスト用サンプル文字列（保存されません・動画タイトルまたはチャンネル名）　例 test ch',
@@ -193,6 +219,17 @@ const messages: Record<string, Dict> = {
   'matchType.regex':  { ja: '正規表現', en: 'Regex', de: 'Regex', it: 'Regex', fr: 'Regex', ko: '정규식', 'zh-CN': '正则表达式', 'zh-TW': '正規表示式' },
   'matchType.exact':  { ja: '完全一致', en: 'Exact match', de: 'Exakte Übereinstimmung', it: 'Corrispondenza esatta', fr: 'Correspondance exacte', ko: '완전 일치', 'zh-CN': '完全匹配', 'zh-TW': '完全符合' },
   'matchType.partial': { ja: '部分一致', en: 'Partial match', de: 'Teilweise Übereinstimmung', it: 'Corrispondenza parziale', fr: 'Correspondance partielle', ko: '부분 일치', 'zh-CN': '部分匹配', 'zh-TW': '部分符合' },
+  'matchType.legend': { ja: '一致方法', en: 'Match type', de: 'Übereinstimmungstyp', it: 'Tipo di corrispondenza', fr: 'Type de correspondance', ko: '일치 방식', 'zh-CN': '匹配方式', 'zh-TW': '符合方式' },
+  'form.matchTypeNote': {
+    ja: '完全一致、部分一致では正規表現表記は純粋な比較文字列として扱われます',
+    en: 'With exact/partial match, regex syntax is treated as a plain literal string.',
+    de: 'Bei exakter/teilweiser Übereinstimmung wird die Regex-Syntax als reine Zeichenkette behandelt.',
+    it: 'Con corrispondenza esatta/parziale, la sintassi regex viene trattata come una stringa letterale.',
+    fr: 'En correspondance exacte/partielle, la syntaxe regex est traitée comme une simple chaîne littérale.',
+    ko: '완전/부분 일치에서는 정규식 표기가 순수한 비교 문자열로 취급됩니다.',
+    'zh-CN': '在完全匹配、部分匹配下，正则表达式写法将被当作纯字符串处理。',
+    'zh-TW': '在完全符合、部分符合下，正規表示式寫法將被當作純字串處理。',
+  },
   'btn.edit':         { ja: '編集', en: 'Edit', de: 'Bearbeiten', it: 'Modifica', fr: 'Modifier', ko: '편집', 'zh-CN': '编辑', 'zh-TW': '編輯' },
   'btn.delete':       { ja: '削除', en: 'Delete', de: 'Löschen', it: 'Elimina', fr: 'Supprimer', ko: '삭제', 'zh-CN': '删除', 'zh-TW': '刪除' },
   'log.title':        { ja: 'ブロックログ（直近50件）', en: 'Block log (last 50)', de: 'Sperrprotokoll (letzte 50)', it: 'Registro dei blocchi (ultimi 50)', fr: 'Journal des blocages (50 derniers)', ko: '차단 로그(최근 50건)', 'zh-CN': '屏蔽日志（最近 50 条）', 'zh-TW': '封鎖紀錄（最近 50 筆）' },
