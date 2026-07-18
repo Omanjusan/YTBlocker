@@ -101,6 +101,9 @@ let lastActiveTab: FormTab = getActiveTab();
     if (next === lastActiveTab) return;
     syncTabOnSwitch(lastActiveTab, next);
     lastActiveTab = next;
+    // 切替直後は値が同期されたばかりなので、新タブ側の判定結果/容量表示を作り直す
+    updateMatchIndicator();
+    updateByteBudget();
   });
 });
 
@@ -256,24 +259,32 @@ function getSelectedTarget(): MatchTarget {
 /**
  * 入力中のパターンがルール1件としてあと何バイト入るかをリアルタイムで表示し、
  * 上限超過または容量100%到達時は登録ボタンをガードする。
+ * 一般/上級者どちらのタブがアクティブかで、参照する入力欄と表示先の要素を出し分ける。
  */
 function updateByteBudget(): void {
+  const budgetEl = getActiveTab() === 'general' ? budgetTextGeneral : budgetText;
+
   if (usageAtCapacity) {
-    budgetText.textContent = t('budget.capacityFull', currentLang);
+    budgetEl.textContent = t('budget.capacityFull', currentLang);
     btnSubmit.disabled = true;
     return;
   }
 
-  const used = estimateEntryBytes(getSelectedTarget(), 'regex', regexInput.value);
+  const used = estimateEntryBytes(getSelectedTarget(), getSelectedMatchType(), getActiveValue());
   const remaining = MAX_ENTRY_BYTES - used;
 
-  budgetText.textContent = remaining >= 0
+  budgetEl.textContent = remaining >= 0
     ? t('budget.remaining', currentLang, { n: remaining })
     : t('budget.tooLong', currentLang);
   btnSubmit.disabled = remaining < 0;
 }
 
+// 一般/上級者どちらの入力欄・一致方法ラジオを操作しても、アクティブタブ側の容量ゲージへ反映する
+generalInput.addEventListener('input', updateByteBudget);
 regexInput.addEventListener('input', updateByteBudget);
+[...generalMatchRadios(), ...advancedMatchRadios()].forEach((el) => {
+  el.addEventListener('change', updateByteBudget);
+});
 document.querySelectorAll<HTMLInputElement>('input[name="target"]').forEach((el) => {
   el.addEventListener('change', updateByteBudget);
 });
