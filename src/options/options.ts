@@ -415,7 +415,7 @@ async function renderList(): Promise<void> {
     targetBadge.textContent = targetLabel(entry);
 
     const typeBadge = document.createElement('span');
-    typeBadge.className = 'entry-badge badge-regex';
+    typeBadge.className = `entry-badge badge-${entry.matchType}`;
     typeBadge.textContent = t(`matchType.${entry.matchType}`, currentLang);
 
     const valueEl = document.createElement('span');
