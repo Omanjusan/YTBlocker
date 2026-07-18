@@ -150,12 +150,14 @@ export function isShorts(card: Element): boolean {
 
 /**
  * value が entry にマッチするか判定する。
+ * partial は value が entry.value を含むかどうかの単純な部分一致。
  * regex の場合、value が `/pattern/flags` 形式ならパターン+フラグとして、
  * そうでなければ文字列全体を正規表現として解釈する。不正な正規表現は false 扱い。
  */
 function entryMatches(value: string, entry: BlockEntry): boolean {
   if (!value) return false;
   if (entry.matchType === 'exact') return value === entry.value;
+  if (entry.matchType === 'partial') return value.includes(entry.value);
   try {
     const m = entry.value.match(/^\/(.+)\/([gimsuy]*)$/);
     return m ? new RegExp(m[1], m[2]).test(value) : new RegExp(entry.value).test(value);
