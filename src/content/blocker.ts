@@ -35,6 +35,37 @@ export function isInsideAdContainer(card: Element): boolean {
 }
 
 /**
+ * 非表示中カードの目印属性。DOMからの物理削除(remove)はYouTube側の内部状態
+ * (広告完了判定など)を壊しプレイヤーの無限リロードを誘発するため、カードは
+ * 削除せずdisplay:noneで非表示にし、この属性で「YTBlockerが隠した」ことを記録する。
+ * YouTubeはカード要素を使い回して中身だけ差し替えるため、非表示は恒久ではなく
+ * applyBlockListの走査ごとに再判定し、マッチしなくなったカードは再表示する。
+ */
+const HIDDEN_ATTR = 'data-ytblocker-hidden';
+
+/** カードを非表示にする。既に非表示でもstyleを上書きし直す(YouTube側のstyle書き換え対策)。 */
+function hideCard(card: Element): void {
+  (card as HTMLElement).style.setProperty('display', 'none', 'important');
+  card.setAttribute(HIDDEN_ATTR, '');
+}
+
+/** 非表示にしたカードを再表示する。 */
+function unhideCard(card: Element): void {
+  (card as HTMLElement).style.removeProperty('display');
+  card.removeAttribute(HIDDEN_ATTR);
+}
+
+/** YTBlockerが非表示にしたカードかどうか。 */
+function isHiddenCard(card: Element): boolean {
+  return card.hasAttribute(HIDDEN_ATTR);
+}
+
+/** 祖先カードが既に非表示かどうか。入れ子カードの二重処理(ログ二重記録)を防ぐ。 */
+function isInsideHiddenCard(card: Element): boolean {
+  return !!card.parentElement?.closest(`[${HIDDEN_ATTR}]`);
+}
+
+/**
  * Shadow DOM を再帰的に貫通して querySelector する。
  * YouTube の新UI(yt-lockup-view-model 等)はタイトル/チャンネル名が
  * shadow root の中に入っていることがあるため、通常の querySelector だけでは届かない。
@@ -123,8 +154,10 @@ export function getPageChannelName(): string {
 }
 
 /**
- * ルール登録・ログ保存・カード除去・トースト表示までを一括で行う。
+ * ルール登録・ログ保存・カード非表示・トースト表示までを一括で行う。
  * menu-injector(三点メニュー)から呼ばれる。
+ * ここでhideCardが付けた目印属性により、直後のapplyBlockList再走査では
+ * ログの二重記録は発生しない。
  */
 export async function blockAndLog(
   card: Element,
@@ -137,7 +170,7 @@ export async function blockAndLog(
   const id = generateId();
   await addEntry({ id, target, matchType: 'exact', value, createdAt: Date.now() });
   await addLogs([{ videoTitle: title, channelName: channel, matchedValue: value, blockedAt: Date.now() }]);
-  card.remove();
+  hideCard(card);
   onAdded();
   showToast(value, id);
 }
@@ -167,30 +200,41 @@ function entryMatches(value: string, entry: BlockEntry): boolean {
 }
 
 /**
- * 現在DOM上にある全カードにブロックルールを適用し、マッチしたものを削除する。
- * ショート一括ブロックが有効な場合はルールに関わらずショートを先に除去する。
- * @returns ルールにマッチしてブロックされた項目のログ配列(呼び出し側で storage に保存する)。
- *          ショート一括ブロックで除去した分はログに含めない。
+ * 現在DOM上にある全カードにブロックルールを適用し、マッチしたものを非表示にする。
+ * ショート一括ブロックが有効な場合はルールに関わらずショートを先に非表示にする。
+ * DOMからの物理削除はしない(YouTube側の広告完了判定等の内部状態を壊し、
+ * プレイヤーの無限リロードを引き起こすため。特にuBlock等の広告ブロッカーが
+ * 広告DOMを先に改変している環境で顕在化する)。
+ * カード要素はYouTube側で使い回される(中身だけ差し替わる)ため、非表示中でも
+ * 走査ごとに再判定し、マッチしなくなったカードは再表示する。ルール取り消し時の
+ * カード復活もこの再表示経路で実現される。
+ * @returns 新たにブロックされた項目のログ配列(呼び出し側で storage に保存する)。
+ *          非表示済みカードの再マッチとショート一括ブロック分はログに含めない。
  */
 export function applyBlockList(entries: BlockEntry[], blockShorts: boolean): BlockLog[] {
   const logged: BlockLog[] = [];
 
   document.querySelectorAll(CARD_SELECTOR).forEach((card) => {
     // ytd-rich-item-renderer の中に yt-lockup-view-model が入る等、カード同士が
-    // 入れ子になることがある。親の除去で切り離された子を処理するとログが
-    // 二重記録されるため、既にDOMから外れたカードはスキップする
-    if (!card.isConnected) return;
+    // 入れ子になることがある。非表示にした親の内側の子を処理するとログが
+    // 二重記録されるため、祖先が非表示済みのカードはスキップする
+    if (isInsideHiddenCard(card)) return;
 
-    // 広告枠内のカードは削除しない(YouTube側の広告完了判定を壊し、
+    // 広告枠内のカードは触らない(YouTube側の広告完了判定を壊し、
     // 無限リロードを引き起こすため)
     if (isInsideAdContainer(card)) return;
 
     if (blockShorts && isShorts(card)) {
-      card.remove();
+      hideCard(card);
       return;
     }
 
-    if (entries.length === 0) return;
+    // ルール0件時はタイトル/チャンネル名抽出(Shadow DOM走査で比較的重い)を省略し、
+    // 非表示カードの再表示だけ行う
+    if (entries.length === 0) {
+      if (isHiddenCard(card)) unhideCard(card);
+      return;
+    }
 
     const title   = getVideoTitle(card);
     const channel = getChannelName(card);
@@ -202,9 +246,18 @@ export function applyBlockList(entries: BlockEntry[], blockShorts: boolean): Blo
     });
 
     if (matchedEntry) {
-      card.remove();
-      logged.push({ videoTitle: title, channelName: channel, matchedValue: matchedEntry.value, blockedAt: Date.now() });
+      // 「表示中→非表示」の遷移時のみログ記録。非表示済みへの再hideは
+      // YouTube側にstyleを消された場合の上書きのみ(ログなし)
+      if (!isHiddenCard(card)) {
+        logged.push({ videoTitle: title, channelName: channel, matchedValue: matchedEntry.value, blockedAt: Date.now() });
+      }
+      hideCard(card);
+      return;
     }
+
+    // どのルールにもマッチしない(またはルールが全て消えた)のに非表示のままの
+    // カードを再表示する。要素使い回しの巻き添え防止と取り消し時の復活を兼ねる
+    if (isHiddenCard(card)) unhideCard(card);
   });
 
   return logged;
