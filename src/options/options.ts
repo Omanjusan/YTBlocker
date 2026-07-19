@@ -1,11 +1,14 @@
 import {
   addEntry, clearLogs, estimateEntryBytes, generateId,
   getBlockShortsEnabled, getEntries, getLogs, getScoutModeEnabled,
-  getUsageBytes, isActiveArea, isLogDisabled, isRuleOrSettingsKey,
-  isSyncEnabled, itemByteSize, MAX_ENTRY_BYTES, removeEntry,
-  setBlockShortsEnabled, setLogDisabled, setScoutModeEnabled, STORAGE_KEYS,
-  switchSyncArea, SYNC_TOTAL_BUDGET, updateEntry,
+  isLogDisabled, isSyncEnabled, removeEntry, setBlockShortsEnabled,
+  setLogDisabled, setScoutModeEnabled, setSyncEnabled, STORAGE_KEYS,
+  updateEntry,
 } from '../shared/storage';
+import {
+  getSyncUsageBytes, isSyncFeedKey, itemByteSize, MAX_ENTRY_BYTES,
+  SYNC_TOTAL_BUDGET,
+} from '../shared/sync-protocol';
 import {
   applyStaticI18n, getLanguage, LANGS, setLanguage,
   t, toIntlLocale, type Lang,
@@ -163,7 +166,7 @@ function renderUsage(): void {
   updateByteBudget();
 }
 
-getUsageBytes().then((bytes) => {
+getSyncUsageBytes().then((bytes) => {
   usedBytes = bytes;
   renderUsage();
 });
@@ -199,13 +202,12 @@ isSyncEnabled().then((enabled) => {
   syncLocalCheckbox.checked = !enabled;
 });
 
+// フラグを切り替えるだけでデータ移送は行わない(正DBは常にlocal)。
+// OFF→ONの追いつき同期はbackgroundがフラグ変更を検知して実行する。
 syncLocalCheckbox.addEventListener('change', async () => {
   syncLocalCheckbox.disabled = true;
   try {
-    await switchSyncArea(!syncLocalCheckbox.checked);
-    usedBytes = await getUsageBytes();
-    renderUsage();
-    await renderList();
+    await setSyncEnabled(!syncLocalCheckbox.checked);
   } finally {
     syncLocalCheckbox.disabled = false;
   }
@@ -499,22 +501,24 @@ btnClearLog.addEventListener('click', async () => {
 
 // ---- ストレージ変更をリアルタイム反映 ----
 
-browser.storage.onChanged.addListener(async (changes, area) => {
-  if (area === 'local' && (changes[STORAGE_KEYS.log] || changes[STORAGE_KEYS.logDisabled])) renderLog();
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local') {
+    if (changes[STORAGE_KEYS.log] || changes[STORAGE_KEYS.logDisabled]) renderLog();
+    // 正DBのルール変更(このタブの編集・他タブ・コンテンツスクリプト・receiverのマージ)は全部ここに届く
+    if (changes[STORAGE_KEYS.rules]) renderList();
+    return;
+  }
 
-  if (await isActiveArea(area)) {
-    // 全チャンクを読み直さず、変化したキーごとの差分バイト数だけキャッシュへ反映する
-    // (getUsageBytes と同じくルール+設定のキーのみを集計対象にする)
+  if (area === 'sync') {
+    // senderの書き込み・他デバイスの送信箱更新を、キーごとの差分バイト数だけキャッシュへ反映する
+    // (getSyncUsageBytes と同じく同期フィードのキーのみを集計対象にする)
     for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
-      if (!isRuleOrSettingsKey(key)) continue;
+      if (!isSyncFeedKey(key)) continue;
       const oldSize = oldValue === undefined ? 0 : itemByteSize(key, oldValue);
       const newSize = newValue === undefined ? 0 : itemByteSize(key, newValue);
       usedBytes += newSize - oldSize;
     }
     renderUsage();
-
-    const ruleChanged = Object.keys(changes).some((k) => k.startsWith(STORAGE_KEYS.rulesPrefix));
-    if (ruleChanged) renderList();
   }
 });
 

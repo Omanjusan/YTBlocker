@@ -1,4 +1,5 @@
-import { addLogs, getBlockShortsEnabled, getEntries, getScoutModeEnabled, isActiveArea, STORAGE_KEYS } from '../shared/storage';
+import { addLogs, getBlockShortsEnabled, getEntries, getScoutModeEnabled } from '../shared/storage';
+import { STORAGE_KEYS } from '../shared/storage';
 import { getLanguage } from '../shared/i18n';
 import { applyBlockList, CARD_SELECTOR, isInsideAdContainer } from './blocker';
 import { scoutScan } from './card-scout';
@@ -49,10 +50,10 @@ async function refresh(): Promise<void> {
   const lang = await getLanguage();
   setupMenuInjector(lang, async () => { await refresh(); });
 
-  // options.ts(別コンテキスト)側でのルール登録・設定変更をこのタブにも即時反映する。
-  // アクティブでないarea(sync/local切替前後の非対象側)からの変更は無視する。
+  // 正DB(storage.local)の変更をこのタブにも即時反映する。options.ts(別コンテキスト)での
+  // ルール登録・設定変更も、receiverによる他デバイス分のマージも、すべてlocalの変更として届く。
   browser.storage.onChanged.addListener(async (changes, area) => {
-    if (!(await isActiveArea(area))) return;
+    if (area !== 'local') return;
 
     if (changes[STORAGE_KEYS.settings]) {
       const newSettings = changes[STORAGE_KEYS.settings].newValue as { scoutMode?: boolean } | undefined;
@@ -60,8 +61,7 @@ async function refresh(): Promise<void> {
       scheduleScout(); // ONにした瞬間に現在のページを一度走査する
     }
 
-    const ruleChanged = Object.keys(changes).some((k) => k.startsWith(STORAGE_KEYS.rulesPrefix));
-    if (!ruleChanged && !changes[STORAGE_KEYS.settings]) return;
+    if (!changes[STORAGE_KEYS.rules] && !changes[STORAGE_KEYS.settings]) return;
     await refresh();
   });
 

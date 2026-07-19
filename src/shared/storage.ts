@@ -1,10 +1,7 @@
-import { byteLength, CHUNK_BYTE_LIMIT, getSyncUsageBytes, isSyncFeedKey } from './sync-protocol';
+import { byteLength, CHUNK_BYTE_LIMIT } from './sync-protocol';
 
 import type { BlockEntry, BlockLog, MatchTarget, MatchType } from './types';
 import type { StoredEntry, Tombstone } from './types';
-
-// 容量計算系は同期プロトコル側の実装を公開名だけ維持して再輸出する(オプション画面が参照)。
-export { itemByteSize, MAX_ENTRY_BYTES, SYNC_TOTAL_BUDGET } from './sync-protocol';
 
 /**
  * 正DB(storage.local)の読み書き。
@@ -14,19 +11,20 @@ export { itemByteSize, MAX_ENTRY_BYTES, SYNC_TOTAL_BUDGET } from './sync-protoco
  */
 
 /** browser.storage で使う各設定項目のキー名。文字列の再入力によるタイポを防ぐため一箇所に集約。
- * 例外: 同期フラグ(SYNC_ENABLED_KEY)は本ファイル内に、言語設定(LANG_STORAGE_KEY)はi18n.tsに別置き。 */
+ * 例外: 言語設定(LANG_STORAGE_KEY)はi18n.tsに別置き。 */
 export const STORAGE_KEYS = {
-  /** 正DBのルール本体。全ルールを1キーに格納する。
-   * 旧チャンクキー(ytblocker_rules_<番号>)と接頭辞を共有しているのは、
-   * 旧実装のonChanged検知(prefix判定)を配線替え(フェーズ2)まで生かすための互換措置。 */
-  rules: 'ytblocker_rules_local',
+  /** 正DBのルール本体。全ルールを1キーに格納する。 */
+  rules: 'ytblocker_local_rules',
   /** 正DBの墓標(削除済みルールIDと削除時刻)。削除の同期伝搬と、受信時の復活防止に使う。 */
-  tombstones: 'ytblocker_tombs_local',
-  /** 旧方式(チャンク分割)のルールキー接頭辞。移行処理(フェーズ3)とonChanged互換判定に使う。 */
-  rulesPrefix: 'ytblocker_rules_',
+  tombstones: 'ytblocker_local_tombs',
+  /** 旧方式(チャンク分割)のルールキー接頭辞。移行処理(フェーズ3)専用。 */
+  legacyRulesPrefix: 'ytblocker_rules_',
   settings: 'ytblocker_settings',
   log: 'ytblocker_log',
   logDisabled: 'ytblocker_log_disabled',
+  /** 同期無効化フラグ。sender/receiverの稼働可否のみを制御する(正DBの置き場所は常にlocal)。
+   * backgroundがONへの切替を検知して追いつき同期を回すため公開キーにしている。 */
+  syncEnabled: 'ytblocker_sync_enabled',
 } as const;
 
 /** 正DB。すべてのルール/設定/ログ操作はこのareaに対して行う。 */
@@ -54,28 +52,15 @@ interface Settings {
 /** 未保存時に使う設定の初期値。 */
 const DEFAULT_SETTINGS: Settings = { blockShorts: false, scoutMode: false };
 
-/** 同期無効化フラグ。sender/receiverの稼働可否のみを制御する(正DBの置き場所は常にlocal)。 */
-const SYNC_ENABLED_KEY = 'ytblocker_sync_enabled';
-
 /** ルールの同期(sender/receiverの稼働)が有効かどうか。デフォルトは有効。 */
 export async function isSyncEnabled(): Promise<boolean> {
-  const result = await AREA.get(SYNC_ENABLED_KEY);
-  return (result[SYNC_ENABLED_KEY] as boolean | undefined) ?? true;
+  const result = await AREA.get(STORAGE_KEYS.syncEnabled);
+  return (result[STORAGE_KEYS.syncEnabled] as boolean | undefined) ?? true;
 }
 
 /** isSyncEnabled と対。OFFでもsync上の自デバイスの送信箱は消さない(キー消失に意味を持たせない設計)。 */
 export async function setSyncEnabled(enabled: boolean): Promise<void> {
-  await AREA.set({ [SYNC_ENABLED_KEY]: enabled });
-}
-
-/** @deprecated 同期のarea切替(データ移送)は廃止。フラグ更新のみ行う。フェーズ2で呼び出し側を整理予定。 */
-export async function switchSyncArea(enabled: boolean): Promise<void> {
-  await setSyncEnabled(enabled);
-}
-
-/** @deprecated 正DBは常にlocal。onChangedの反応対象area判定の互換用。フェーズ2で呼び出し側を整理予定。 */
-export async function isActiveArea(areaName: string): Promise<boolean> {
-  return areaName === 'local';
+  await AREA.set({ [STORAGE_KEYS.syncEnabled]: enabled });
 }
 
 /** target(1/2/3)とmatchType(0=exact/1=partial/2=regex)を1つの数値に合成してタプルのフィールド数を減らす。 */
@@ -110,17 +95,6 @@ function fromStored(stored: StoredEntry): BlockEntry {
 export function estimateEntryBytes(target: MatchTarget, matchType: MatchType, value: string): number {
   const stored: StoredEntry = [DUMMY_ID, packTargetMatch(target, matchType), value, DUMMY_CREATED_AT];
   return byteLength([stored]);
-}
-
-/** 容量ゲージの集計対象(同期フィード)のキーかどうか。
- * TODO(フェーズ2): ゲージ処理の配線替えに合わせて isSyncFeedKey へ呼び出し側を直接切替。 */
-export function isRuleOrSettingsKey(key: string): boolean {
-  return isSyncFeedKey(key);
-}
-
-/** 同期フィードが storage.sync 上で消費しているバイト数。容量ゲージの初期化用。 */
-export async function getUsageBytes(): Promise<number> {
-  return getSyncUsageBytes();
 }
 
 /** 正DBのルール一覧を保存形式(タプル)のまま取得する。sender の送信元にもなる。 */
