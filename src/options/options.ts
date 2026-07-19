@@ -1,9 +1,9 @@
 import {
   addEntry, clearLogs, estimateEntryBytes, generateId,
-  getBlockShortsEnabled, getEntries, getLogs, getScoutModeEnabled,
-  isLogDisabled, isSyncEnabled, removeEntry, setBlockShortsEnabled,
-  setLogDisabled, setScoutModeEnabled, setSyncEnabled, STORAGE_KEYS,
-  updateEntry,
+  getBlockShortsEnabled, getEntries, getLogs, getPauseAllEnabled,
+  getScoutModeEnabled, isLogDisabled, isSyncEnabled, removeEntry,
+  setBlockShortsEnabled, setLogDisabled, setPauseAllEnabled, setScoutModeEnabled,
+  setSyncEnabled, STORAGE_KEYS, updateEntry,
 } from '../shared/storage';
 import {
   getSyncUsageBytes, isSyncFeedKey, itemByteSize, MAX_ENTRY_BYTES,
@@ -19,6 +19,7 @@ const versionLabel        = document.getElementById('version-label')         as 
 const langSelect          = document.getElementById('lang-select')           as HTMLSelectElement;
 const usageBadge          = document.getElementById('usage-badge')           as HTMLSpanElement;
 const shortsCheckbox      = document.getElementById('shorts-checkbox')       as HTMLInputElement;
+const pauseAllCheckbox    = document.getElementById('pause-all-checkbox')    as HTMLInputElement;
 const scoutCheckbox       = document.getElementById('scout-checkbox')        as HTMLInputElement;
 const syncLocalCheckbox   = document.getElementById('sync-local-checkbox')   as HTMLInputElement;
 const logDisabledCheckbox = document.getElementById('log-disabled-checkbox') as HTMLInputElement;
@@ -183,6 +184,16 @@ getBlockShortsEnabled().then((enabled) => {
 
 shortsCheckbox.addEventListener('change', () => {
   setBlockShortsEnabled(shortsCheckbox.checked);
+});
+
+// ---- 全ブロック一時無効化設定 ----
+
+getPauseAllEnabled().then((enabled) => {
+  pauseAllCheckbox.checked = enabled;
+});
+
+pauseAllCheckbox.addEventListener('change', () => {
+  setPauseAllEnabled(pauseAllCheckbox.checked);
 });
 
 // ---- 観測モード設定 ----

@@ -47,10 +47,12 @@ const DUMMY_CREATED_AT = 1700000000000;
 interface Settings {
   blockShorts: boolean;
   scoutMode: boolean;
+  /** すべてのブロック(ルール＋ショート一括非表示)の一時無効化。 */
+  pauseAll: boolean;
 }
 
 /** 未保存時に使う設定の初期値。 */
-const DEFAULT_SETTINGS: Settings = { blockShorts: false, scoutMode: false };
+const DEFAULT_SETTINGS: Settings = { blockShorts: false, scoutMode: false, pauseAll: false };
 
 /** ルールの同期(sender/receiverの稼働)が有効かどうか。デフォルトは有効。 */
 export async function isSyncEnabled(): Promise<boolean> {
@@ -268,6 +270,16 @@ export async function getScoutModeEnabled(): Promise<boolean> {
 /** getScoutModeEnabled と対。 */
 export async function setScoutModeEnabled(enabled: boolean): Promise<void> {
   await setSettings({ scoutMode: enabled });
+}
+
+/** すべてのブロック(ルール＋ショート一括非表示)を一時無効化しているかどうかを取得する。 */
+export async function getPauseAllEnabled(): Promise<boolean> {
+  return (await getSettings()).pauseAll;
+}
+
+/** getPauseAllEnabled と対。 */
+export async function setPauseAllEnabled(enabled: boolean): Promise<void> {
+  await setSettings({ pauseAll: enabled });
 }
 
 /** ブロックルール/ログのID用に衝突しにくい一意な文字列を生成する。 */

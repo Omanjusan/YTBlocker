@@ -63,6 +63,16 @@ const messages: Record<string, Dict> = {
     ja: 'ショート動画をすべて非表示にする', en: 'Hide all Shorts', de: 'Alle Shorts ausblenden', it: 'Nascondi tutti gli Shorts',
     fr: 'Masquer tous les Shorts', ko: '모든 쇼츠 동영상 숨기기', 'zh-CN': '隐藏所有 Shorts 短视频', 'zh-TW': '隱藏所有 Shorts 短影片',
   },
+  'pauseAll.label': {
+    ja: 'すべてのブロックルールを一時的に無効にする（ショート動画の非表示も解除）',
+    en: 'Temporarily disable all block rules (also unhides Shorts)',
+    de: 'Alle Sperrregeln vorübergehend deaktivieren (blendet auch Shorts wieder ein)',
+    it: 'Disattiva temporaneamente tutte le regole di blocco (mostra di nuovo anche gli Shorts)',
+    fr: 'Désactiver temporairement toutes les règles de blocage (réaffiche aussi les Shorts)',
+    ko: '모든 차단 규칙을 일시적으로 비활성화(쇼츠 숨기기도 해제)',
+    'zh-CN': '暂时停用所有屏蔽规则（同时取消隐藏 Shorts）',
+    'zh-TW': '暫時停用所有封鎖規則（同時取消隱藏 Shorts）',
+  },
   'scout.label': {
     ja: '観測モード（未対応カードをコンソールに報告。通常はOFF）',
     en: 'Scout mode (reports unsupported cards to console. Usually OFF)',

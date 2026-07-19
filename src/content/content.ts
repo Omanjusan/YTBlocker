@@ -1,4 +1,7 @@
-import { addLogs, getBlockShortsEnabled, getEntries, getScoutModeEnabled } from '../shared/storage';
+import {
+  addLogs, getBlockShortsEnabled, getEntries, getPauseAllEnabled,
+  getScoutModeEnabled,
+} from '../shared/storage';
 import { STORAGE_KEYS } from '../shared/storage';
 import { getLanguage } from '../shared/i18n';
 import { applyBlockList, CARD_SELECTOR, isInsideAdContainer } from './blocker';
@@ -11,6 +14,8 @@ import type { BlockEntry } from '../shared/types';
 let blockEntries: BlockEntry[] = [];
 /** ショート動画を一括ブロックする設定の現在値。refresh() で読み直す。 */
 let blockShorts = false;
+/** すべてのブロックを一時無効化する設定の現在値。refresh() で読み直す。 */
+let pauseAll = false;
 /** 観測モード(youtubeUIアップデート時など未対応カード検出時の開発者追跡用隠しオプション)
  * の現在値。storage.onChanged で即時反映する。 */
 let scoutMode = false;
@@ -20,15 +25,18 @@ function scheduleScout(): void {
   if (scoutMode) scoutScan();
 }
 
-/** 現在のブロックルールをDOMに適用し、ブロックが発生していればログを保存する。 */
+/** 現在のブロックルールをDOMに適用し、ブロックが発生していればログを保存する。
+ * 一時無効化中はルール0件・ショート無効として走査し、非表示済みカードを全て再表示する。 */
 function applyAndLog(): void {
-  const logs = applyBlockList(blockEntries, blockShorts);
+  const logs = pauseAll ? applyBlockList([], false) : applyBlockList(blockEntries, blockShorts);
   if (logs.length > 0) addLogs(logs).catch(() => {});
 }
 
 /** storage からルール/設定を読み直し、ブロック適用をやり直す。 */
 async function refresh(): Promise<void> {
-  [blockEntries, blockShorts] = await Promise.all([getEntries(), getBlockShortsEnabled()]);
+  [blockEntries, blockShorts, pauseAll] = await Promise.all([
+    getEntries(), getBlockShortsEnabled(), getPauseAllEnabled(),
+  ]);
   applyAndLog();
 }
 
