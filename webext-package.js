@@ -32,12 +32,26 @@ function copyRecursive(src, dest) {
   }
 }
 
+// sourcemapは実行時に読まれず配布物には不要のため、ステージングから除外する
+// （dist/内の開発用mapはそのまま残す。欠けることで起きるのはDevToolsデバッグ時の警告のみ）
+function removeSourceMaps(dir) {
+  for (const entry of fs.readdirSync(dir)) {
+    const p = path.join(dir, entry);
+    if (fs.statSync(p).isDirectory()) {
+      removeSourceMaps(p);
+    } else if (entry.endsWith('.map')) {
+      fs.rmSync(p);
+    }
+  }
+}
+
 function buildWebExtPackage() {
   fs.rmSync(STAGING_DIR, { recursive: true, force: true });
   fs.mkdirSync(STAGING_DIR, { recursive: true });
   for (const item of DIST_ZIP_INCLUDES) {
     copyRecursive(path.join(ROOT, item), path.join(STAGING_DIR, item));
   }
+  removeSourceMaps(STAGING_DIR);
 
   try {
     execFileSync(
