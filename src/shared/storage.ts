@@ -194,12 +194,14 @@ export async function mergeForeign(foreignEntries: StoredEntry[], foreignTombs: 
   const survivors = entries.filter((e) => !tombIds.has(e[0]));
 
   const localIds = new Set(survivors.map((e) => e[0]));
-  const localBodies = new Set(survivors.map((e) => `${e[1]} ${e[2]}`));
+  // 同内容判定キーの区切りはNUL。ルール値に現れ得ない文字なので衝突しない。
+  // 生のNULバイトを書くとgrep/file等がこのファイルをバイナリ扱いするためエスケープ表記にする
+  const localBodies = new Set(survivors.map((e) => `${e[1]}\u0000${e[2]}`));
   const additions = foreignEntries.filter((e) => {
     if (tombIds.has(e[0]) || localIds.has(e[0])) return false;
-    if (localBodies.has(`${e[1]} ${e[2]}`)) return false;
+    if (localBodies.has(`${e[1]}\u0000${e[2]}`)) return false;
     localIds.add(e[0]);
-    localBodies.add(`${e[1]} ${e[2]}`);
+    localBodies.add(`${e[1]}\u0000${e[2]}`);
     return true;
   });
 
