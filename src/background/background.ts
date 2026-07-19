@@ -1,3 +1,4 @@
+import { importLegacy, isLegacyRuleKey } from '../shared/migration';
 import { pull } from '../shared/receiver';
 import { publish } from '../shared/sender';
 import { STORAGE_KEYS } from '../shared/storage';
@@ -36,8 +37,20 @@ async function runSync(): Promise<void> {
   }
 }
 
-// 起動時(ブラウザ起動・拡張更新)に一度追いつく
-void runSync();
+/** 旧形式(v1チャンク)の取り込み。冪等なので失敗しても次回起動・次回検知でやり直せる。 */
+async function runImportLegacy(): Promise<void> {
+  try {
+    await importLegacy();
+  } catch (e) {
+    console.warn('YTBlocker: 旧形式データの移行に失敗', e);
+  }
+}
+
+// 起動時(ブラウザ起動・拡張更新)は旧形式の取り込み→追いつき同期の順で一度回す
+void (async () => {
+  await runImportLegacy();
+  await runSync();
+})();
 
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local') {
@@ -54,5 +67,8 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync') {
     // 他デバイスの送信箱の更新 → 受信。自分のキーの外部変化(同期層の事故等) → publishの自己修復
     if (Object.keys(changes).some(isSyncFeedKey)) void runSync();
+    // 旧バージョンのままの他デバイスが旧チャンクを更新した場合も取りこぼさず取り込む
+    // (取り込みで正DBが変わればlocalのonChanged経由でrunSyncが自動的に続く)
+    if (Object.keys(changes).some(isLegacyRuleKey)) void runImportLegacy();
   }
 });
