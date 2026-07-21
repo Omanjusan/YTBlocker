@@ -1,4 +1,4 @@
 {
-  "extName": { "message": "YTBlocker", "description": "拡張機能名" },
+  "extName": { "message": "Youtube Keyword Blocker", "description": "拡張機能名" },
   "extDescription": { "message": "YouTubeの動画・チャンネルを登録されたNGルールに従い非表示にします", "description": "about:addonsに表示される説明文" }
 }

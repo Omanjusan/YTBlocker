@@ -1,4 +1,4 @@
 {
-  "extName": { "message": "YTBlocker", "description": "Nom de l'extension" },
+  "extName": { "message": "Youtube Keyword Blocker", "description": "Nom de l'extension" },
   "extDescription": { "message": "Masque les vidéos et chaînes YouTube selon les règles de blocage enregistrées.", "description": "Description affichée dans about:addons" }
 }

@@ -63,6 +63,6 @@ export function scoutScan(): void {
     const key = chain.join(' < ');
     if (seen.has(key)) return;
     seen.add(key);
-    console.log(`[YTBlocker:SCOUT] 未対応カード候補: ${key} @ ${location.pathname}`);
+    console.log(`[Youtube Keyword Blocker:SCOUT] 未対応カード候補: ${key} @ ${location.pathname}`);
   });
 }

@@ -1,4 +1,4 @@
 {
-  "extName": { "message": "YTBlocker", "description": "확장 기능 이름" },
+  "extName": { "message": "Youtube Keyword Blocker", "description": "확장 기능 이름" },
   "extDescription": { "message": "등록된 차단 규칙에 따라 YouTube 동영상과 채널을 숨깁니다.", "description": "about:addons에 표시되는 설명" }
 }

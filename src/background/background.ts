@@ -27,7 +27,7 @@ async function runSync(): Promise<void> {
     await pull();
     await publish();
   } catch (e) {
-    console.warn('YTBlocker: 同期処理に失敗', e);
+    console.warn('Youtube Keyword Blocker: 同期処理に失敗', e);
   } finally {
     syncRunning = false;
     if (syncQueued) {
@@ -42,7 +42,7 @@ async function runImportLegacy(): Promise<void> {
   try {
     await importLegacy();
   } catch (e) {
-    console.warn('YTBlocker: 旧形式データの移行に失敗', e);
+    console.warn('Youtube Keyword Blocker: 旧形式データの移行に失敗', e);
   }
 }
 

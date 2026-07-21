@@ -37,7 +37,7 @@ export function isInsideAdContainer(card: Element): boolean {
 /**
  * 非表示中カードの目印属性。DOMからの物理削除(remove)はYouTube側の内部状態
  * (広告完了判定など)を壊しプレイヤーの無限リロードを誘発するため、カードは
- * 削除せずdisplay:noneで非表示にし、この属性で「YTBlockerが隠した」ことを記録する。
+ * 削除せずdisplay:noneで非表示にし、この属性で「Youtube Keyword Blockerが隠した」ことを記録する。
  * YouTubeはカード要素を使い回して中身だけ差し替えるため、非表示は恒久ではなく
  * applyBlockListの走査ごとに再判定し、マッチしなくなったカードは再表示する。
  */
@@ -55,7 +55,7 @@ function unhideCard(card: Element): void {
   card.removeAttribute(HIDDEN_ATTR);
 }
 
-/** YTBlockerが非表示にしたカードかどうか。 */
+/** Youtube Keyword Blockerが非表示にしたカードかどうか。 */
 function isHiddenCard(card: Element): boolean {
   return card.hasAttribute(HIDDEN_ATTR);
 }

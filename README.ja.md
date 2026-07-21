@@ -1,4 +1,4 @@
-# YTBlocker
+# Youtube Keyword Blocker
 
 [English version here](README.md)
 
@@ -30,7 +30,7 @@ Firefoxの拡張機能です。ユーザーが設定したルールによりYout
 
 ## インストール
 
-Firefoxの拡張機能YTBlockerで検索してインストールしてください（[配布ページ](https://addons.mozilla.org/ja/firefox/addon/youtublocker/)）
+Firefoxの拡張機能Youtube Keyword Blockerで検索してインストールしてください（[配布ページ](https://addons.mozilla.org/ja/firefox/addon/youtublocker/)）
 
 
 ## 使い方

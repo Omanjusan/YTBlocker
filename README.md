@@ -1,4 +1,4 @@
-# YTBlocker
+# Youtube Keyword Blocker
 
 [日本語版はこちら](README.ja.md)
 
@@ -30,7 +30,7 @@ This means no more conflicts with ad blockers. For layout leftovers when hiding 
 
 ## Installation
 
-Search for "YTBlocker" in Firefox add-ons and install it ([add-on page](https://addons.mozilla.org/ja/firefox/addon/youtublocker/)).
+Search for "Youtube Keyword Blocker" in Firefox add-ons and install it ([add-on page](https://addons.mozilla.org/ja/firefox/addon/youtublocker/)).
 
 ## Usage
 
