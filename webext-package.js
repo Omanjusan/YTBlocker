@@ -56,7 +56,14 @@ function buildWebExtPackage() {
   try {
     execFileSync(
       'npx',
-      ['web-ext', 'build', `--source-dir=${STAGING_DIR}`, '--artifacts-dir=web-ext-artifacts', '--overwrite-dest'],
+      [
+        'web-ext', 'build',
+        `--source-dir=${STAGING_DIR}`,
+        '--artifacts-dir=web-ext-artifacts',
+        '--overwrite-dest',
+        // extName変更後もパッケージ名はytblocker接頭辞のまま固定する(既存の配布物と接頭辞を揃えるため)
+        '--filename=ytblocker-{version}.zip',
+      ],
       { cwd: ROOT, stdio: 'inherit' },
     );
   } finally {
